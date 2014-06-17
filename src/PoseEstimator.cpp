@@ -6,10 +6,12 @@
 namespace pose_estimation
 {
 
-PoseEstimator::PoseEstimator() : last_measurement_time(base::Time::fromSeconds(0.0)), max_time_delta(base::infinity<double>())
+PoseEstimator::PoseEstimator(FilterType filter_type) : last_measurement_time(base::Time::fromSeconds(0.0)), max_time_delta(base::infinity<double>())
 {
-    //FIXME select pose ekf for now
-    filter.reset(new PoseEKF());
+    if(filter_type == UKF)
+	throw std::runtime_error("UKF is not yet available.");
+    else  
+	filter.reset(new PoseEKF());
 }
 
 void PoseEstimator::setInitialState(const base::samples::RigidBodyState& body_state)

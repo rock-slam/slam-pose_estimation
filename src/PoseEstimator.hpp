@@ -3,6 +3,7 @@
 
 #include <pose_estimation/Measurement.hpp>
 #include <pose_estimation/AbstractFilter.hpp>
+#include <pose_estimation/PoseEstimatorConfig.hpp>
 
 #include <boost/shared_ptr.hpp>
 #include <queue>
@@ -12,8 +13,8 @@ namespace pose_estimation
 
 class PoseEstimator
 {
-public:
-    PoseEstimator();
+public:    
+    PoseEstimator(FilterType filter_type);
     
     void setInitialState(const base::samples::RigidBodyState &body_state);
     void setProcessNoise(const Covariance& process_noise);

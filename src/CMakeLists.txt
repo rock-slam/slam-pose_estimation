@@ -3,6 +3,7 @@ set (POSE_ESTIMATION_HEADERS
     ros_ekf/filter_base.hpp
     ros_ekf/filter_common.hpp
     PoseEstimator.hpp
+    PoseEstimatorConfig.hpp
     AbstractFilter.hpp
     Measurement.hpp
     PoseEKF.hpp
