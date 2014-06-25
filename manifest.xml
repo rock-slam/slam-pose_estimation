@@ -10,4 +10,6 @@
   <depend package="base/cmake" />
   <depend package="base/types" />
   <depend package="slam/mtk" />
+  
+  <tags>needs_opt</tags>
 </package>

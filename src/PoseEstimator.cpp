@@ -1,5 +1,6 @@
 #include "PoseEstimator.hpp"
 #include <pose_estimation/PoseEKF.hpp>
+#include <pose_estimation/PoseUKF.hpp>
 #include <base/Logging.hpp>
 #include <base/Float.hpp>
 
@@ -9,7 +10,7 @@ namespace pose_estimation
 PoseEstimator::PoseEstimator(FilterType filter_type) : last_measurement_time(base::Time::fromSeconds(0.0)), max_time_delta(base::infinity<double>())
 {
     if(filter_type == UKF)
-	throw std::runtime_error("UKF is not yet available.");
+	filter.reset(new PoseUKF());
     else  
 	filter.reset(new PoseEKF());
 }

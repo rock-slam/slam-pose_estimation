@@ -2,11 +2,15 @@ set (POSE_ESTIMATION_HEADERS
     ros_ekf/ekf.hpp
     ros_ekf/filter_base.hpp
     ros_ekf/filter_common.hpp
+    mtk_ukf/PoseWithVelocity.hpp
+    mtk_ukf/ProcessModels.hpp
+    mtk_ukf/MeasurementModels.hpp
     PoseEstimator.hpp
     PoseEstimatorConfig.hpp
     AbstractFilter.hpp
     Measurement.hpp
     PoseEKF.hpp
+    PoseUKF.hpp
     )
     
 set (POSE_ESTIMATION_SOURCES
@@ -14,6 +18,7 @@ set (POSE_ESTIMATION_SOURCES
     ros_ekf/filter_base.cpp
     PoseEstimator.cpp
     PoseEKF.cpp
+    PoseUKF.cpp
     )
 
 rock_library(pose_estimation
