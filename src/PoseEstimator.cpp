@@ -46,8 +46,11 @@ bool PoseEstimator::enqueueMeasurement(const base::samples::RigidBodyState& body
 bool PoseEstimator::enqueueMeasurement(const Measurement& measurement)
 {
     if(measurement.body_state.time < last_measurement_time)
+    {
+	LOG_WARN("Attempt to enqueue an older measurement. This Measurement will be skiped.");
 	return false;
-    
+    }
+	
     measurement_queue.push(measurement);
     
     return true;
