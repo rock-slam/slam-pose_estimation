@@ -88,26 +88,41 @@ public:
     template<class RotationType2, class TranslationType2, class VelocityType2>
     void applyState(const PoseWithVelocity<RotationType2, TranslationType2, VelocityType2> &state, const Eigen::Matrix<unsigned, DOF, 1>& mask)
     {
-	position(0, 0) = mask(0, 0) == 1 ? state.position(0, 0) : position(0, 0);
-	position(1, 0) = mask(1, 0) == 1 ? state.position(1, 0) : position(1, 0);
-	position(2, 0) = mask(2, 0) == 1 ? state.position(2, 0) : position(2, 0);
+	// augment position
+	position(0) = mask(0) == 1 ? state.position(0) : position(0);
+	position(1) = mask(1) == 1 ? state.position(1) : position(1);
+	position(2) = mask(2) == 1 ? state.position(2) : position(2);
 	
+	// augment orientation
 	base::Vector3d current_euler = base::getEuler(orientation);
 	base::Vector3d new_euler = base::getEuler(state.orientation);
-	current_euler(0, 0) = mask(5, 0) == 1 ? new_euler(0, 0) : current_euler(0, 0);
-	current_euler(1, 0) = mask(4, 0) == 1 ? new_euler(1, 0) : current_euler(1, 0);
-	current_euler(2, 0) = mask(3, 0) == 1 ? new_euler(2, 0) : current_euler(2, 0);
-	orientation = Eigen::AngleAxisd(current_euler[0], Eigen::Vector3d::UnitZ()) *
-			Eigen::AngleAxisd(current_euler[1], Eigen::Vector3d::UnitY()) * 
-			Eigen::AngleAxisd(current_euler[2], Eigen::Vector3d::UnitX());
+	current_euler(0) = mask(5) == 1 ? new_euler(0) : current_euler(0);
+	current_euler(1) = mask(4) == 1 ? new_euler(1) : current_euler(1);
+	current_euler(2) = mask(3) == 1 ? new_euler(2) : current_euler(2);
+	orientation = Eigen::AngleAxisd(current_euler(0), Eigen::Vector3d::UnitZ()) *
+			Eigen::AngleAxisd(current_euler(1), Eigen::Vector3d::UnitY()) * 
+			Eigen::AngleAxisd(current_euler(2), Eigen::Vector3d::UnitX());
 	
-	velocity(0, 0) = mask(6, 0) == 1 ? state.velocity(0, 0) : velocity(0, 0);
-	velocity(1, 0) = mask(7, 0) == 1 ? state.velocity(1, 0) : velocity(1, 0);
-	velocity(2, 0) = mask(8, 0) == 1 ? state.velocity(2, 0) : velocity(2, 0);
+	// augment velocity
+	velocity(0) = mask(6) == 1 ? state.velocity(0) : velocity(0);
+	velocity(1) = mask(7) == 1 ? state.velocity(1) : velocity(1);
+	velocity(2) = mask(8) == 1 ? state.velocity(2) : velocity(2);
 	
-	angular_velocity(0, 0) = mask(9, 0) == 1 ? state.angular_velocity(0, 0) : angular_velocity(0, 0);
-	angular_velocity(1, 0) = mask(10, 0) == 1 ? state.angular_velocity(1, 0) : angular_velocity(1, 0);
-	angular_velocity(2, 0) = mask(11, 0) == 1 ? state.angular_velocity(2, 0) : angular_velocity(2, 0);
+	// augment angular velocity
+	base::Vector3d new_euler_angle_velocity(0.0,0.0,0.0);
+	base::Vector3d current_euler_angle_velocity(0.0,0.0,0.0);
+	if(!state.angular_velocity.isZero())
+	    new_euler_angle_velocity = base::getEuler(base::Orientation(Eigen::AngleAxisd(state.angular_velocity.norm(), state.angular_velocity.normalized())));
+	if(!angular_velocity.isZero())
+	    current_euler_angle_velocity = base::getEuler(base::Orientation(Eigen::AngleAxisd(angular_velocity.norm(), angular_velocity.normalized())));
+	current_euler_angle_velocity(0) = mask(11) == 1 ? new_euler_angle_velocity(0) : current_euler_angle_velocity(0);
+	current_euler_angle_velocity(1) = mask(10) == 1 ? new_euler_angle_velocity(1) : current_euler_angle_velocity(1);
+	current_euler_angle_velocity(2) = mask(9) == 1 ? new_euler_angle_velocity(2) : current_euler_angle_velocity(2);
+	
+	Eigen::AngleAxisd angle_axis = Eigen::AngleAxisd(Eigen::AngleAxisd(current_euler_angle_velocity(0), Eigen::Vector3d::UnitZ()) * 
+							Eigen::AngleAxisd(current_euler_angle_velocity(1), Eigen::Vector3d::UnitY()) * 
+							Eigen::AngleAxisd(current_euler_angle_velocity(2), Eigen::Vector3d::UnitX()));
+	angular_velocity = angle_axis.angle() * angle_axis.axis();
     }
 };
 
