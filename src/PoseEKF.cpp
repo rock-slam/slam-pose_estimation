@@ -52,7 +52,7 @@ void PoseEKF::matrixToRigidBodyState(const Eigen::VectorXd& state, const Eigen::
     body_state.orientation = base::Orientation(Eigen::AngleAxisd(state(5), Eigen::Vector3d::UnitZ()) * 
 						Eigen::AngleAxisd(state(4), Eigen::Vector3d::UnitY()) * 
 						Eigen::AngleAxisd(state(3), Eigen::Vector3d::UnitX()));
-    body_state.velocity = state.block(6,0,3,1);
+    body_state.velocity = body_state.orientation * state.block(6,0,3,1);
     Eigen::AngleAxisd angle_axis = Eigen::AngleAxisd(Eigen::AngleAxisd(state(11), Eigen::Vector3d::UnitZ()) * 
 						    Eigen::AngleAxisd(state(10), Eigen::Vector3d::UnitY()) * 
 						    Eigen::AngleAxisd(state(9), Eigen::Vector3d::UnitX()));

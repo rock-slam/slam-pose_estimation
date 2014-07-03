@@ -107,7 +107,7 @@ void PoseUKF::UKFStateToRigidBodyState(const PoseUKF::WPoseState& state, const u
 {
     body_state.position = state.position;
     body_state.orientation = state.orientation;
-    body_state.velocity = state.velocity;
+    body_state.velocity = body_state.orientation * state.velocity;
     body_state.angular_velocity = state.angular_velocity;
     
     body_state.cov_position = covariance.block(0, 0, 3, 3);
