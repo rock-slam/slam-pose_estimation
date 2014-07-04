@@ -1,6 +1,8 @@
 #include "PoseUKF.hpp"
 #include <pose_estimation/mtk_ukf/ProcessModels.hpp>
 #include <pose_estimation/mtk_ukf/MeasurementModels.hpp>
+#include <base/Float.hpp>
+#include <base/Logging.hpp>
 
 namespace pose_estimation
 {
@@ -60,10 +62,6 @@ void PoseUKF::correctionStep(const Measurement& measurement)
     Covariance cov;
     rigidBodyStateToUKFState(measurement.body_state, state, cov);
     
-    // augment the current state by new measurements
-    WPoseState augmented_state(ukf->mu());
-    augmented_state.applyState(state, measurement.member_mask);
-    
     // the unknown parts of the covariance matrix to the highest possible error (infinity in non-discrete case)
     for(unsigned i = 0; i < WPoseState::DOF; i++)
 	for(unsigned j = 0; j < WPoseState::DOF; j++)
@@ -74,7 +72,23 @@ void PoseUKF::correctionStep(const Measurement& measurement)
 		if(i==j)
 		    cov(i,j) = std::numeric_limits<double>::max();
 	    }
+	    else if(cov(i,j) == 0.0)
+	    {
+		// handle zero variances
+		LOG_WARN("Covariance contains zero values. Override them with %d", 1e-9);
+		cov(i,j) = 1e-9;
+	    }
+	    else if(base::isNaN<Covariance::Scalar>(cov(i,j)))
+	    {
+		// handle NaN variances
+		LOG_ERROR("Covariance contains NaN values! This Measurement will be skipped.");
+		return;
+	    }
 	}
+    
+    // augment the current state by new measurements
+    WPoseState augmented_state(ukf->mu());
+    augmented_state.applyState(state, measurement.member_mask);
     
     // apply new measurement
     ukf->update(augmented_state, boost::bind(measurementModel<WPoseState>, _1), 
