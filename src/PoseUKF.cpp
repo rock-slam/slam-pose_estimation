@@ -62,11 +62,24 @@ void PoseUKF::correctionStep(const Measurement& measurement)
     Covariance cov;
     rigidBodyStateToUKFState(measurement.body_state, state, cov);
     
+    // check state for NaN values
+    Measurement::MemberMask mask = measurement.member_mask;
+    Eigen::Matrix<WPoseState::scalar_type, WPoseState::DOF, 1> state_vector = state.getStateVector();
+    for(unsigned i = 0; i < WPoseState::DOF; i++)
+    {
+	if(mask(i,0) != 0 && base::isNaN<WPoseState::scalar_type>(state_vector(i,0)))
+	{
+	    // handle NaN values in state
+	    LOG_ERROR("State contains NaN values! This Measurement will be excluded from correction step.");
+	    mask(i,0) = 0;
+	}
+    }
+    
     // the unknown parts of the covariance matrix to the highest possible error (infinity in non-discrete case)
     for(unsigned i = 0; i < WPoseState::DOF; i++)
 	for(unsigned j = 0; j < WPoseState::DOF; j++)
 	{
-	    if((measurement.member_mask(i,0) * measurement.member_mask(j,0)) == 0)
+	    if((mask(i,0) * mask(j,0)) == 0)
 	    {
 		cov(i,j) = 0.0;
 		if(i==j)
@@ -88,7 +101,7 @@ void PoseUKF::correctionStep(const Measurement& measurement)
     
     // augment the current state by new measurements
     WPoseState augmented_state(ukf->mu());
-    augmented_state.applyState(state, measurement.member_mask);
+    augmented_state.applyState(state, mask);
     
     // apply new measurement
     ukf->update(augmented_state, boost::bind(measurementModel<WPoseState>, _1), 
