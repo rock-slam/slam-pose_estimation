@@ -91,6 +91,11 @@ void PoseUKF::correctionStep(const Measurement& measurement)
 		LOG_WARN("Covariance contains zero values. Override them with %d", 1e-9);
 		cov(i,j) = 1e-9;
 	    }
+	    else if(base::isInfinity<Covariance::Scalar>(cov(i,j)))
+	    {
+		// map infinity to the highest possible error
+		cov(i,j) = std::numeric_limits<double>::max();
+	    }
 	    else if(base::isNaN<Covariance::Scalar>(cov(i,j)))
 	    {
 		// handle NaN variances
