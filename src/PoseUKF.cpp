@@ -85,7 +85,7 @@ void PoseUKF::correctionStep(const Measurement& measurement)
 		if(i==j)
 		    cov(i,j) = std::numeric_limits<double>::max();
 	    }
-	    else if(cov(i,j) == 0.0)
+	    else if(i==j && cov(i,j) == 0.0)
 	    {
 		// handle zero variances
 		LOG_WARN("Covariance contains zero values. Override them with %d", 1e-9);
