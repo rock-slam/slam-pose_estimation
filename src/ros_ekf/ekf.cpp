@@ -69,14 +69,14 @@ namespace RobotLocalization
       if (measurement.updateVector_[i])
       {
         // Handle nan and inf values in measurements
-        if (std::isnan(measurement.measurement_(i)))
+        if (std::isnan(measurement.measurement_(i)) || std::isnan(measurement.covariance_(i,i)))
         {
           if (getDebug())
           {
             *debugStream_ << "Value at index " << i << " was nan. Excluding from update.\n";
           }
         }
-        else if (std::isinf(measurement.measurement_(i)))
+        else if (std::isinf(measurement.measurement_(i)) || std::isinf(measurement.covariance_(i,i)))
         {
           if (getDebug())
           {
