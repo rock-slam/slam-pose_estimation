@@ -29,7 +29,7 @@ public:
     
     void processMeasurement(const Measurement &measurement);
     
-    base::samples::RigidBodyState getEstimatedState();
+    bool getEstimatedState(base::samples::RigidBodyState &estimated_state);
     
     
 protected:

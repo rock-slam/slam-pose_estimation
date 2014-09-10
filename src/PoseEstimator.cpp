@@ -114,11 +114,14 @@ void PoseEstimator::processMeasurement(const Measurement& measurement)
     last_measurement_time = measurement.body_state.time;
 }
 
-base::samples::RigidBodyState PoseEstimator::getEstimatedState()
+bool PoseEstimator::getEstimatedState(base::samples::RigidBodyState &estimated_state)
 {
-    base::samples::RigidBodyState state = filter->getCurrentState();
-    state.time = last_measurement_time;
-    return state;
+    if(last_measurement_time.isNull())
+	return false;
+    
+    estimated_state = filter->getCurrentState();
+    estimated_state.time = last_measurement_time;
+    return true;
 }
 
 bool PoseEstimator::checkMemberMask(const Measurement::MemberMask& member_mask)
