@@ -38,6 +38,34 @@ struct Measurement
     {
 	return a.body_state.time > b.body_state.time;
     }
+    
+    bool hasPositionMeasurement()
+    {
+        if(member_mask[BodyStateMemberX] || member_mask[BodyStateMemberY] || member_mask[BodyStateMemberZ])
+            return true;
+        return false;
+    }
+    
+    bool hasOrientationMeasurement()
+    {
+        if(member_mask[BodyStateMemberRoll] || member_mask[BodyStateMemberPitch] || member_mask[BodyStateMemberYaw])
+            return true;
+        return false;
+    }
+    
+    bool hasVelocityMeasurement()
+    {
+        if(member_mask[BodyStateMemberVx] || member_mask[BodyStateMemberVy] || member_mask[BodyStateMemberVz])
+            return true;
+        return false;
+    }
+    
+    bool hasAngularVelocityMeasurement()
+    {
+        if(member_mask[BodyStateMemberVroll] || member_mask[BodyStateMemberVpitch] || member_mask[BodyStateMemberVyaw])
+            return true;
+        return false;
+    }
 };
 
 }
