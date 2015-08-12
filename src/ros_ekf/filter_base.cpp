@@ -41,6 +41,8 @@
 namespace RobotLocalization
 {
   FilterBase::FilterBase() :
+    initialized_(false),
+    debugStream_(NULL),
     state_(STATE_SIZE),
     transferFunction_(STATE_SIZE, STATE_SIZE),
     transferFunctionJacobian_(STATE_SIZE, STATE_SIZE),
@@ -50,8 +52,7 @@ namespace RobotLocalization
     identity_(STATE_SIZE, STATE_SIZE),
     pi_(3.141592653589793),
     tau_(6.283185307179586),
-    debug_(false),
-    debugStream_(NULL)
+    debug_(false)
   {
     initialized_ = false;
 
