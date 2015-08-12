@@ -9,6 +9,7 @@ namespace pose_estimation
     class AbstractFilter
     {
     public:
+        virtual ~AbstractFilter() { }
 	virtual void setInitialState(const base::samples::RigidBodyState& body_state) = 0;
 	virtual void setProcessNoiseCovariance(const Covariance& noise_cov) = 0;
 	virtual void predictionStep(const double delta) = 0;

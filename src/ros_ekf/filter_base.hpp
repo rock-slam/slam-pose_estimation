@@ -80,7 +80,7 @@ namespace RobotLocalization
 
       //! @brief Destructor for the FilterBase class
       //!
-      ~FilterBase();
+      virtual ~FilterBase();
 
       //! @brief Adds a measurement to the queue of measurements to be processed
       //!
