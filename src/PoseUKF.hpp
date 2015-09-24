@@ -36,6 +36,7 @@ protected:
     boost::shared_ptr<MTK_UKF> ukf;
     bool dirty;
     base::samples::RigidBodyState body_state;
+    base::samples::RigidBodyAcceleration last_acceleration_sample;
     Covariance process_noise_cov;
 };
 

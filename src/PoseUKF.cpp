@@ -11,6 +11,8 @@ PoseUKF::PoseUKF() : dirty(true)
 {
     body_state.initUnknown();
 
+    last_acceleration_sample.time.microseconds = 0;
+
     process_noise_cov = Covariance::Zero();
     MTK::setDiagonal(process_noise_cov, &WPoseState::position, 0.01);
     MTK::setDiagonal(process_noise_cov, &WPoseState::orientation, 0.001);
@@ -46,8 +48,15 @@ void PoseUKF::predictionStep(const double delta)
 	setInitialState(body_state);
     }
     dirty = true;
-    
-    ukf->predict(boost::bind(processModel<WPoseState>, _1 , delta), MTK_UKF::cov(delta * process_noise_cov));
+
+    if(last_acceleration_sample.time.isNull())
+        ukf->predict(boost::bind(processModel<WPoseState>, _1 , delta), MTK_UKF::cov(delta * process_noise_cov));
+    else
+    {
+        Covariance process_noise = process_noise_cov;
+        process_noise.block(6,6,3,3) = 2.0 * last_acceleration_sample.cov_acceleration;
+        ukf->predict(boost::bind(processModelWithAcceleration<WPoseState>, _1, last_acceleration_sample.acceleration, delta), MTK_UKF::cov(delta * process_noise));
+    }
 }
 
 void PoseUKF::correctionStep(const Measurement& measurement)
@@ -56,68 +65,93 @@ void PoseUKF::correctionStep(const Measurement& measurement)
     {
 	setInitialState(body_state);
     }
-    dirty = true;
-    
-    WPoseState state;
-    Covariance cov;
-    rigidBodyStateToUKFState(measurement.body_state, state, cov);
-    
-    // check state for NaN values
-    Eigen::Matrix<unsigned, BODY_STATE_SIZE, 1> mask = measurement.member_mask.block(0,0,BODY_STATE_SIZE,1);
-    Eigen::Matrix<WPoseState::scalar_type, WPoseState::DOF, 1> state_vector = state.getStateVector();
-    for(unsigned i = 0; i < WPoseState::DOF; i++)
+
+    // handle acc measurements
+    if(measurement.hasAccelerationMeasurement())
     {
-	if(mask(i,0) != 0 && base::isNaN<WPoseState::scalar_type>(state_vector(i,0)))
-	{
-	    // handle NaN values in state
-	    LOG_ERROR("State contains NaN values! This Measurement will be excluded from correction step.");
-	    mask(i,0) = 0;
-	}
-    }
-    
-    // check covariance matrix for NaN values
-    for(unsigned i = 0; i < WPoseState::DOF; i++)
-	for(unsigned j = 0; j < WPoseState::DOF; j++)
-	{
-            if(mask(i,0) != 0 && mask(j,0) != 0 && base::isNaN<Covariance::Scalar>(cov(i,j)))
+        const Measurement::MemberMask &mask = measurement.member_mask;
+        if(mask[BodyStateMemberAx] > 0 && mask[BodyStateMemberAy] > 0 && mask[BodyStateMemberAz] > 0)
+        {
+            if(base::isnotnan(measurement.acceleration.cov_acceleration) && base::isnotnan(measurement.acceleration.acceleration))
             {
-                // handle NaN variances
-                LOG_ERROR("Covariance contains NaN values! This Measurement will be skipped.");
-                return;
+                last_acceleration_sample = measurement.acceleration;
+                last_acceleration_sample.time = measurement.time;
             }
-	    else if(i==j && cov(i,j) == 0.0)
-	    {
-		// handle zero variances
-		LOG_WARN("Covariance diagonal contains zero values. Override them with %d", 1e-9);
-		cov(i,j) = 1e-9;
-	    }
-	}
-
-    Eigen::Matrix<WPoseState::scalar, -1, 1> sub_state = state.getSubStateVector(mask);
-    unsigned measurement_size = sub_state.rows();
-
-    std::vector<unsigned> m_index2mask_index;
-    for(unsigned i = 0; i < WPoseState::DOF; i++)
-    {
-        if(mask(i) > 0)
+            else
+                LOG_ERROR("Acceleration covariance or acceleration sample contains NaN values!");
+        }
+        else
         {
-            m_index2mask_index.push_back(i);
+            LOG_ERROR("Cannot handle partial selected acceleration samples");
         }
     }
-    Eigen::Matrix<WPoseState::scalar, -1, -1> sub_cov(measurement_size, measurement_size);
-    sub_cov.setZero();
-    for(unsigned i = 0; i < measurement_size; i++)
+
+    // handle body state measurements
+    if(measurement.hasPositionMeasurement() || measurement.hasOrientationMeasurement() || measurement.hasVelocityMeasurement() || measurement.hasAngularVelocityMeasurement())
     {
-        for(unsigned j = 0; j < measurement_size; j++)
+        dirty = true;
+
+        WPoseState state;
+        Covariance cov;
+        rigidBodyStateToUKFState(measurement.body_state, state, cov);
+
+        // check state for NaN values
+        Eigen::Matrix<unsigned, BODY_STATE_SIZE, 1> mask = measurement.member_mask.block(0,0,BODY_STATE_SIZE,1);
+        Eigen::Matrix<WPoseState::scalar_type, WPoseState::DOF, 1> state_vector = state.getStateVector();
+        for(unsigned i = 0; i < WPoseState::DOF; i++)
         {
-            sub_cov(i,j) = cov(m_index2mask_index[i], m_index2mask_index[j]);
+            if(mask(i,0) != 0 && base::isNaN<WPoseState::scalar_type>(state_vector(i,0)))
+            {
+                // handle NaN values in state
+                LOG_ERROR("State contains NaN values! This Measurement will be excluded from correction step.");
+                mask(i,0) = 0;
+            }
         }
+
+        // check covariance matrix for NaN values
+        for(unsigned i = 0; i < WPoseState::DOF; i++)
+            for(unsigned j = 0; j < WPoseState::DOF; j++)
+            {
+                if(mask(i,0) != 0 && mask(j,0) != 0 && base::isNaN<Covariance::Scalar>(cov(i,j)))
+                {
+                    // handle NaN variances
+                    LOG_ERROR("Covariance contains NaN values! This Measurement will be skipped.");
+                    return;
+                }
+                else if(i==j && cov(i,j) == 0.0)
+                {
+                    // handle zero variances
+                    LOG_WARN("Covariance diagonal contains zero values. Override them with %d", 1e-9);
+                    cov(i,j) = 1e-9;
+                }
+            }
+
+        Eigen::Matrix<WPoseState::scalar, -1, 1> sub_state = state.getSubStateVector(mask);
+        unsigned measurement_size = sub_state.rows();
+
+        std::vector<unsigned> m_index2mask_index;
+        for(unsigned i = 0; i < WPoseState::DOF; i++)
+        {
+            if(mask(i) > 0)
+            {
+                m_index2mask_index.push_back(i);
+            }
+        }
+        Eigen::Matrix<WPoseState::scalar, -1, -1> sub_cov(measurement_size, measurement_size);
+        sub_cov.setZero();
+        for(unsigned i = 0; i < measurement_size; i++)
+        {
+            for(unsigned j = 0; j < measurement_size; j++)
+            {
+                sub_cov(i,j) = cov(m_index2mask_index[i], m_index2mask_index[j]);
+            }
+        }
+
+        // apply new measurement
+        ukf->update(sub_state, boost::bind(measurementModel<WPoseState>, _1, mask),
+                    boost::bind(ukfom::id< Eigen::MatrixXd >, sub_cov),
+                    ukfom::accept_any_mahalanobis_distance<MTK_UKF::scalar_type>);
     }
-    
-    // apply new measurement
-    ukf->update(sub_state, boost::bind(measurementModel<WPoseState>, _1, mask),
-		boost::bind(ukfom::id< Eigen::MatrixXd >, sub_cov),
-                ukfom::accept_any_mahalanobis_distance<MTK_UKF::scalar_type>);
 }
 
 const base::samples::RigidBodyState& PoseUKF::getCurrentState()
