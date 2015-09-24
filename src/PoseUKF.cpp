@@ -63,7 +63,7 @@ void PoseUKF::correctionStep(const Measurement& measurement)
     rigidBodyStateToUKFState(measurement.body_state, state, cov);
     
     // check state for NaN values
-    Measurement::MemberMask mask = measurement.member_mask;
+    Eigen::Matrix<unsigned, BODY_STATE_SIZE, 1> mask = measurement.member_mask.block(0,0,BODY_STATE_SIZE,1);
     Eigen::Matrix<WPoseState::scalar_type, WPoseState::DOF, 1> state_vector = state.getStateVector();
     for(unsigned i = 0; i < WPoseState::DOF; i++)
     {

@@ -38,14 +38,33 @@ bool PoseEstimator::enqueueMeasurement(const base::samples::RigidBodyState& body
     }
     
     Measurement measurement;
+    measurement.time = body_state.time;
     measurement.body_state = body_state;
+    measurement.member_mask = member_mask;
+    return enqueueMeasurement(measurement);
+}
+
+bool PoseEstimator::enqueueMeasurement(const base::Time time,
+                                       const base::samples::RigidBodyState& body_state,
+                                       const base::samples::RigidBodyAcceleration& acceleration,
+                                       const Measurement::MemberMask& member_mask)
+{
+    if(!checkMemberMask(member_mask))
+    {
+        throw std::runtime_error("Member mask contains invalid values. Only 0 and 1 is allowed." );
+    }
+
+    Measurement measurement;
+    measurement.time = time;
+    measurement.body_state = body_state;
+    measurement.acceleration = acceleration;
     measurement.member_mask = member_mask;
     return enqueueMeasurement(measurement);
 }
 
 bool PoseEstimator::enqueueMeasurement(const Measurement& measurement)
 {
-    if(measurement.body_state.time < last_measurement_time)
+    if(measurement.time < last_measurement_time)
     {
 	LOG_WARN("Attempt to enqueue an older measurement. This Measurement will be skiped.");
 	return false;
@@ -94,7 +113,7 @@ void PoseEstimator::processMeasurement(const Measurement& measurement)
 {
     if(!last_measurement_time.isNull())
     {
-	double time_delta = (measurement.body_state.time - last_measurement_time).toSeconds();
+	double time_delta = (measurement.time - last_measurement_time).toSeconds();
 	
 	if(time_delta < 0.0)
 	    throw std::runtime_error("Attempt to process an older measurement. Time delta is negative!");
@@ -111,7 +130,7 @@ void PoseEstimator::processMeasurement(const Measurement& measurement)
     // correction step
     filter->correctionStep(measurement);
     
-    last_measurement_time = measurement.body_state.time;
+    last_measurement_time = measurement.time;
 }
 
 bool PoseEstimator::getEstimatedState(base::samples::RigidBodyState &estimated_state)
@@ -126,9 +145,9 @@ bool PoseEstimator::getEstimatedState(base::samples::RigidBodyState &estimated_s
 
 bool PoseEstimator::checkMemberMask(const Measurement::MemberMask& member_mask)
 {
-    if(member_mask.rows() != BODY_STATE_SIZE || member_mask.cols() != 1)
+    if(member_mask.rows() != MEASUREMENT_SIZE || member_mask.cols() != 1)
 	return false;
-    for(unsigned i = 0; i < BODY_STATE_SIZE; i++)
+    for(unsigned i = 0; i < MEASUREMENT_SIZE; i++)
     {
 	if(!(member_mask(i, 0) == 0 || member_mask(i, 0) == 1))
 	    return false;
