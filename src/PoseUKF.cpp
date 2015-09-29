@@ -75,42 +75,49 @@ void PoseUKF::correctionStep(const Measurement& measurement)
 	}
     }
     
-    // the unknown parts of the covariance matrix to the highest possible error (infinity in non-discrete case)
+    // check covariance matrix for NaN values
     for(unsigned i = 0; i < WPoseState::DOF; i++)
 	for(unsigned j = 0; j < WPoseState::DOF; j++)
 	{
-	    if((mask(i,0) * mask(j,0)) == 0)
-	    {
-		cov(i,j) = 0.0;
-		if(i==j)
-		    cov(i,j) = std::numeric_limits<double>::max();
-	    }
+            if(mask(i,0) != 0 && mask(j,0) != 0 && base::isNaN<Covariance::Scalar>(cov(i,j)))
+            {
+                // handle NaN variances
+                LOG_ERROR("Covariance contains NaN values! This Measurement will be skipped.");
+                return;
+            }
 	    else if(i==j && cov(i,j) == 0.0)
 	    {
 		// handle zero variances
-		LOG_WARN("Covariance contains zero values. Override them with %d", 1e-9);
+		LOG_WARN("Covariance diagonal contains zero values. Override them with %d", 1e-9);
 		cov(i,j) = 1e-9;
 	    }
-	    else if(base::isInfinity<Covariance::Scalar>(cov(i,j)))
-	    {
-		// map infinity to the highest possible error
-		cov(i,j) = std::numeric_limits<double>::max();
-	    }
-	    else if(base::isNaN<Covariance::Scalar>(cov(i,j)))
-	    {
-		// handle NaN variances
-		LOG_ERROR("Covariance contains NaN values! This Measurement will be skipped.");
-		return;
-	    }
 	}
-    
-    // augment the current state by new measurements
-    WPoseState augmented_state(ukf->mu());
-    augmented_state.applyState(state, mask);
+
+    Eigen::Matrix<WPoseState::scalar, -1, 1> sub_state = state.getSubStateVector(mask);
+    unsigned measurement_size = sub_state.rows();
+
+    std::vector<unsigned> m_index2mask_index;
+    for(unsigned i = 0; i < WPoseState::DOF; i++)
+    {
+        if(mask(i) > 0)
+        {
+            m_index2mask_index.push_back(i);
+        }
+    }
+    Eigen::Matrix<WPoseState::scalar, -1, -1> sub_cov(measurement_size, measurement_size);
+    sub_cov.setZero();
+    for(unsigned i = 0; i < measurement_size; i++)
+    {
+        for(unsigned j = 0; j < measurement_size; j++)
+        {
+            sub_cov(i,j) = cov(m_index2mask_index[i], m_index2mask_index[j]);
+        }
+    }
     
     // apply new measurement
-    ukf->update(augmented_state, boost::bind(measurementModel<WPoseState>, _1), 
-		boost::bind(ukfom::id<MTK_UKF::cov>, cov), ukfom::accept_any_mahalanobis_distance<MTK_UKF::scalar_type>);
+    ukf->update(sub_state, boost::bind(measurementModel<WPoseState>, _1, mask),
+		boost::bind(ukfom::id< Eigen::MatrixXd >, sub_cov),
+                ukfom::accept_any_mahalanobis_distance<MTK_UKF::scalar_type>);
 }
 
 const base::samples::RigidBodyState& PoseUKF::getCurrentState()
