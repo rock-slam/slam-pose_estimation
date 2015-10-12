@@ -30,14 +30,14 @@ void PoseEstimator::setMaxTimeDelta(double max_time_delta)
     this->max_time_delta = max_time_delta;
 }
 
-bool PoseEstimator::enqueueMeasurement(const base::samples::RigidBodyState& body_state, const Measurement::MemberMask& member_mask)
+bool PoseEstimator::enqueueMeasurement(const base::samples::RigidBodyState& body_state, const BodyStateMeasurement::MemberMask& member_mask)
 {
     if(!checkMemberMask(member_mask))
     {
 	throw std::runtime_error("Member mask contains invalid values. Only 0 and 1 is allowed." );
     }
     
-    Measurement measurement;
+    BodyStateMeasurement measurement;
     measurement.time = body_state.time;
     measurement.body_state = body_state;
     measurement.member_mask = member_mask;
@@ -47,14 +47,14 @@ bool PoseEstimator::enqueueMeasurement(const base::samples::RigidBodyState& body
 bool PoseEstimator::enqueueMeasurement(const base::Time time,
                                        const base::samples::RigidBodyState& body_state,
                                        const base::samples::RigidBodyAcceleration& acceleration,
-                                       const Measurement::MemberMask& member_mask)
+                                       const BodyStateMeasurement::MemberMask& member_mask)
 {
     if(!checkMemberMask(member_mask))
     {
         throw std::runtime_error("Member mask contains invalid values. Only 0 and 1 is allowed." );
     }
 
-    Measurement measurement;
+    BodyStateMeasurement measurement;
     measurement.time = time;
     measurement.body_state = body_state;
     measurement.acceleration = acceleration;
@@ -62,7 +62,7 @@ bool PoseEstimator::enqueueMeasurement(const base::Time time,
     return enqueueMeasurement(measurement);
 }
 
-bool PoseEstimator::enqueueMeasurement(const Measurement& measurement)
+bool PoseEstimator::enqueueMeasurement(const BodyStateMeasurement& measurement)
 {
     if(measurement.time < last_measurement_time)
     {
@@ -75,14 +75,16 @@ bool PoseEstimator::enqueueMeasurement(const Measurement& measurement)
     return true;
 }
 
-void PoseEstimator::integrateMeasurements()
+void PoseEstimator::integrateMeasurements(unsigned measurement_count)
 {
-    while (!measurement_queue.empty())
+    unsigned measurements_handled = 0;
+    while (!measurement_queue.empty() && measurements_handled <= measurement_count)
     {
-	Measurement measurement = measurement_queue.top();
+	BodyStateMeasurement measurement = measurement_queue.top();
 	measurement_queue.pop();
 
 	processMeasurement(measurement);
+        measurements_handled++;
     }
 }
 
@@ -109,7 +111,7 @@ void PoseEstimator::integrateMeasurements(const base::Time& current_time)
     last_measurement_time = current_time;
 }
 
-void PoseEstimator::processMeasurement(const Measurement& measurement)
+void PoseEstimator::processMeasurement(const BodyStateMeasurement& measurement)
 {
     if(!last_measurement_time.isNull())
     {
@@ -138,12 +140,12 @@ bool PoseEstimator::getEstimatedState(base::samples::RigidBodyState &estimated_s
     if(last_measurement_time.isNull())
 	return false;
     
-    estimated_state = filter->getCurrentState();
+    estimated_state = filter->getCurrentRBSState();
     estimated_state.time = last_measurement_time;
     return true;
 }
 
-bool PoseEstimator::checkMemberMask(const Measurement::MemberMask& member_mask)
+bool PoseEstimator::checkMemberMask(const BodyStateMeasurement::MemberMask& member_mask)
 {
     if(member_mask.rows() != MEASUREMENT_SIZE || member_mask.cols() != 1)
 	return false;

@@ -28,6 +28,7 @@ public:
     typedef typename rotation_type::scalar scalar;
     typedef PoseWithVelocity self;
     enum {DOF = TranslationDOF + RotationDOF + VelocityDOF + AngularVelocityDOF};
+    typedef Eigen::Matrix<scalar, int(DOF), int(DOF)> cov;
 
     // State types
     MTK::SubManifold<TranslationType, TranslationIdx> position;

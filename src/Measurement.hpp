@@ -7,9 +7,34 @@
 
 namespace pose_estimation
 {
-    
-  enum BodyStateMembers
-  {
+
+struct StateAndCovariance
+{
+    typedef double scalar;
+    typedef Eigen::Matrix<scalar, Eigen::Dynamic, 1> Mu;
+    typedef Eigen::Matrix<scalar, Eigen::Dynamic, Eigen::Dynamic> Cov;
+
+    Mu mu;
+    Cov cov;
+};
+
+struct Measurement : public StateAndCovariance
+{
+    typedef Eigen::Matrix<unsigned, Eigen::Dynamic, 1> StateMapping;
+    typedef Eigen::Matrix<unsigned, Eigen::Dynamic, 1> StateMask;
+
+    base::Time time;
+
+    // This maps the measurement state to the actual filter state
+    //StateMapping map;
+    StateMask mask;
+
+    std::string measurement_name;
+};
+
+
+enum BodyStateMembers
+{
     BodyStateMemberX = 0,
     BodyStateMemberY,
     BodyStateMemberZ,
@@ -25,14 +50,14 @@ namespace pose_estimation
     BodyStateMemberAx,
     BodyStateMemberAy,
     BodyStateMemberAz,
-  };
+};
 
-  const int BODY_STATE_SIZE = 12;
-  const int MEASUREMENT_SIZE = BODY_STATE_SIZE + 3;
-  
-  typedef Eigen::Matrix<double, BODY_STATE_SIZE, BODY_STATE_SIZE> Covariance;
+const int BODY_STATE_SIZE = 12;
+const int MEASUREMENT_SIZE = BODY_STATE_SIZE + 3;
 
-struct Measurement
+typedef Eigen::Matrix<double, BODY_STATE_SIZE, BODY_STATE_SIZE> Covariance;
+
+struct BodyStateMeasurement
 {
     typedef Eigen::Matrix<unsigned, MEASUREMENT_SIZE, 1> MemberMask;
     
@@ -41,9 +66,9 @@ struct Measurement
     base::samples::RigidBodyAcceleration acceleration;
     MemberMask member_mask;
 
-    Measurement() : member_mask(MemberMask::Zero()) {}
+    BodyStateMeasurement() : member_mask(MemberMask::Zero()) {}
     
-    bool operator()(const Measurement &a, const Measurement &b) const
+    bool operator()(const BodyStateMeasurement &a, const BodyStateMeasurement &b) const
     {
 	return a.time > b.time;
     }

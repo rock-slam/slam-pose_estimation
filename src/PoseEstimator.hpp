@@ -6,10 +6,16 @@
 #include <pose_estimation/PoseEstimatorConfig.hpp>
 
 #include <boost/shared_ptr.hpp>
+#include <limits>
 #include <queue>
+#include <list>
 
 namespace pose_estimation
 {
+
+struct newer_measurement : std::binary_function <BodyStateMeasurement,BodyStateMeasurement,bool> {
+  bool operator() (const BodyStateMeasurement& x, const BodyStateMeasurement& y) const {return x.time>=y.time;}
+};
 
 class PoseEstimator
 {
@@ -21,27 +27,30 @@ public:
     void setMaxTimeDelta(double max_time_delta);
     
     bool enqueueMeasurement(const base::samples::RigidBodyState& body_state,
-			    const Measurement::MemberMask& member_mask);
+			    const BodyStateMeasurement::MemberMask& member_mask);
     bool enqueueMeasurement(const base::Time time,
                             const base::samples::RigidBodyState& body_state,
                             const base::samples::RigidBodyAcceleration& acceleration,
-                            const Measurement::MemberMask& member_mask);
-    bool enqueueMeasurement(const Measurement& measurement);
+                            const BodyStateMeasurement::MemberMask& member_mask);
+    bool enqueueMeasurement(const BodyStateMeasurement& measurement);
     
-    void integrateMeasurements();
+    void integrateMeasurements(unsigned measurement_count = std::numeric_limits<unsigned>::max());
     void integrateMeasurements(const base::Time& current_time);
     
-    void processMeasurement(const Measurement &measurement);
+    void processMeasurement(const BodyStateMeasurement &measurement);
     
     bool getEstimatedState(base::samples::RigidBodyState &estimated_state);
+
+    bool measurementsInQueue() {return !measurement_queue.empty();}
+    size_t measurementQueueSize() {return measurement_queue.size();}
     
     
 protected:
-    bool checkMemberMask(const Measurement::MemberMask& member_mask);
+    bool checkMemberMask(const BodyStateMeasurement::MemberMask& member_mask);
     
     
-    std::priority_queue<Measurement, std::vector<Measurement>, Measurement> measurement_queue;
-    boost::shared_ptr<AbstractFilter> filter;
+    std::priority_queue<BodyStateMeasurement, std::deque<BodyStateMeasurement>, newer_measurement> measurement_queue;
+    boost::shared_ptr<AbstractRBSFilter> filter;
     base::Time last_measurement_time;
     double max_time_delta;
 };
