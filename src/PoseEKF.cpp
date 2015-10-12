@@ -31,10 +31,10 @@ void PoseEKF::correctionStep(const Measurement& measurement)
     dirty = true;
     
     RobotLocalization::Measurement m;
-    m.time_ = measurement.body_state.time.toSeconds();
+    m.time_ = measurement.time.toSeconds();
     rigidBodyStateToMarix(measurement.body_state, m.measurement_, m.covariance_);
     m.updateVector_.resize(BODY_STATE_SIZE);
-    Eigen::Map< Eigen::Matrix<int, BODY_STATE_SIZE, 1> >(m.updateVector_.data()) = measurement.member_mask.cast<int>();
+    Eigen::Map< Eigen::Matrix<int, BODY_STATE_SIZE, 1> >(m.updateVector_.data()) = measurement.member_mask.cast<int>().block(0,0,BODY_STATE_SIZE,1);
     Ekf::correct(m);
 }
 

@@ -22,6 +22,10 @@ public:
     
     bool enqueueMeasurement(const base::samples::RigidBodyState& body_state,
 			    const Measurement::MemberMask& member_mask);
+    bool enqueueMeasurement(const base::Time time,
+                            const base::samples::RigidBodyState& body_state,
+                            const base::samples::RigidBodyAcceleration& acceleration,
+                            const Measurement::MemberMask& member_mask);
     bool enqueueMeasurement(const Measurement& measurement);
     
     void integrateMeasurements();

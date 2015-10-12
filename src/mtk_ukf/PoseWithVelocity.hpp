@@ -74,6 +74,13 @@ public:
 	position.boxplus(orientation * velocity, delta_time);
 	orientation.boxplus(angular_velocity, delta_time);
     }
+
+    void applyVelocity(const Eigen::Vector3d& acc, double delta_time)
+    {
+        velocity.boxplus(acc, delta_time);
+        position.boxplus(orientation * velocity, delta_time);
+        orientation.boxplus(angular_velocity, delta_time);
+    }
     
     Eigen::Matrix<scalar, DOF, 1> getStateVector() const
     {
