@@ -34,7 +34,9 @@ public:
     void processMeasurement(const Measurement &measurement);
     
     bool getEstimatedState(base::samples::RigidBodyState &estimated_state);
-    
+
+    base::VectorXd getFullState();
+    base::MatrixXd getFullCovariance();
     
 protected:
     bool checkMemberMask(const Measurement::MemberMask& member_mask);

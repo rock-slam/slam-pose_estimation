@@ -24,6 +24,8 @@ public:
     virtual void predictionStep(const double delta);
     virtual void correctionStep(const Measurement &measurement);
     virtual const base::samples::RigidBodyState& getCurrentState();
+    virtual base::VectorXd getFullState();
+    virtual base::MatrixXd getFullCovariance();
     
 protected:
     typedef MTK::SO3<double> MTKRotationType;

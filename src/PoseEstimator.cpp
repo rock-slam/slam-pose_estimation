@@ -143,6 +143,16 @@ bool PoseEstimator::getEstimatedState(base::samples::RigidBodyState &estimated_s
     return true;
 }
 
+base::VectorXd PoseEstimator::getFullState()
+{
+    return filter->getFullState();
+}
+
+base::MatrixXd PoseEstimator::getFullCovariance()
+{
+    return filter->getFullCovariance();
+}
+
 bool PoseEstimator::checkMemberMask(const Measurement::MemberMask& member_mask)
 {
     if(member_mask.rows() != MEASUREMENT_SIZE || member_mask.cols() != 1)

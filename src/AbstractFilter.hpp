@@ -15,6 +15,8 @@ namespace pose_estimation
 	virtual void predictionStep(const double delta) = 0;
 	virtual void correctionStep(const Measurement& measurement) = 0;
 	virtual const base::samples::RigidBodyState& getCurrentState() = 0;
+        virtual base::VectorXd getFullState() = 0;
+        virtual base::MatrixXd getFullCovariance() = 0;
     };
 }
 

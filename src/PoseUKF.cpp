@@ -179,6 +179,24 @@ const base::samples::RigidBodyState& PoseUKF::getCurrentState()
     return body_state;
 }
 
+base::VectorXd PoseUKF::getFullState()
+{
+    PoseUKF::WPoseState mu = ukf->mu();
+    Eigen::Matrix<WPoseState::scalar_type, PoseState::DOF, 1> pose_state = mu.getStateVector();
+    base::VectorXd state(WPoseState::DOF);
+    state.block(WPoseState::PoseWithVelocityIdx,0,WPoseState::PoseWithVelocityDOF,1) = pose_state;
+    state.block(WPoseState::BiasIdx,0,WPoseState::BiasDOF,1) = mu.bias.bias;
+    return state;
+}
+
+base::MatrixXd PoseUKF::getFullCovariance()
+{
+    MTK_UKF::cov sigma = ukf->sigma();
+    base::MatrixXd cov(sigma.rows(), sigma.rows());
+    cov = sigma;
+    return cov;
+}
+
 void PoseUKF::rigidBodyStateToUKFState(const base::samples::RigidBodyState& body_state, PoseUKF::PoseState& state, PoseState::cov& covariance)
 {
     state.position = body_state.position;

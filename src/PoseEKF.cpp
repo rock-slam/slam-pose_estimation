@@ -46,6 +46,16 @@ const base::samples::RigidBodyState& PoseEKF::getCurrentState()
     return body_state;
 }
 
+base::VectorXd PoseEKF::getFullState()
+{
+    return Ekf::getState();
+}
+
+base::MatrixXd PoseEKF::getFullCovariance()
+{
+    return Ekf::getEstimateErrorCovariance();
+}
+
 void PoseEKF::matrixToRigidBodyState(const Eigen::VectorXd& state, const Eigen::MatrixXd& covariance, base::samples::RigidBodyState &body_state)
 {
     body_state.position = state.block(0,0,3,1);

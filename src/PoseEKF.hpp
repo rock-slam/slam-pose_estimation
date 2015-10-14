@@ -18,6 +18,8 @@ public:
     virtual void predictionStep(const double delta);
     virtual void correctionStep(const Measurement &measurement);
     virtual const base::samples::RigidBodyState& getCurrentState();
+    virtual base::VectorXd getFullState();
+    virtual base::MatrixXd getFullCovariance();
     
 protected:
     void rigidBodyStateToMarix(const base::samples::RigidBodyState &body_state, Eigen::VectorXd& state, Eigen::MatrixXd& covariance);
