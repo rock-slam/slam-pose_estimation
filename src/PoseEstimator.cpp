@@ -7,7 +7,9 @@
 namespace pose_estimation
 {
 
-PoseEstimator::PoseEstimator(FilterType filter_type) : last_measurement_time(base::Time::fromSeconds(0.0)), max_time_delta(base::infinity<double>())
+PoseEstimator::PoseEstimator(FilterType filter_type) : last_measurement_time(base::Time::fromSeconds(0.0)),
+                                                        max_time_delta(base::infinity<double>()),
+                                                        allow_integration_of_older_measurements(false)
 {
     if(filter_type == UKF)
 	filter.reset(new PoseUKF());
@@ -28,6 +30,11 @@ void PoseEstimator::setProcessNoise(const Covariance& process_noise)
 void PoseEstimator::setMaxTimeDelta(double max_time_delta)
 {
     this->max_time_delta = max_time_delta;
+}
+
+void PoseEstimator::allowIntegrationOfOlderMeasurements(bool allow)
+{
+    allow_integration_of_older_measurements = allow;
 }
 
 bool PoseEstimator::enqueueMeasurement(const base::samples::RigidBodyState& body_state, const Measurement::MemberMask& member_mask)
@@ -64,7 +71,7 @@ bool PoseEstimator::enqueueMeasurement(const base::Time time,
 
 bool PoseEstimator::enqueueMeasurement(const Measurement& measurement)
 {
-    if(measurement.time < last_measurement_time)
+    if(!allow_integration_of_older_measurements && measurement.time < last_measurement_time)
     {
 	LOG_WARN("Attempt to enqueue an older measurement. This Measurement will be skiped.");
 	return false;
@@ -94,7 +101,7 @@ void PoseEstimator::integrateMeasurements(const base::Time& current_time)
     {
 	double time_delta = (current_time - last_measurement_time).toSeconds();
 	
-	if(time_delta < 0.0)
+	if(!allow_integration_of_older_measurements && time_delta < 0.0)
 	    throw std::runtime_error("Attempt to go back in time. Time delta is negative!");
 	
 	// prediction step
@@ -115,7 +122,7 @@ void PoseEstimator::processMeasurement(const Measurement& measurement)
     {
 	double time_delta = (measurement.time - last_measurement_time).toSeconds();
 	
-	if(time_delta < 0.0)
+	if(!allow_integration_of_older_measurements && time_delta < 0.0)
 	    throw std::runtime_error("Attempt to process an older measurement. Time delta is negative!");
 	
 	// prediction step

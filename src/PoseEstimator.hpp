@@ -19,6 +19,7 @@ public:
     void setInitialState(const base::samples::RigidBodyState &body_state);
     void setProcessNoise(const Covariance& process_noise);
     void setMaxTimeDelta(double max_time_delta);
+    void allowIntegrationOfOlderMeasurements(bool allow);
     
     bool enqueueMeasurement(const base::samples::RigidBodyState& body_state,
 			    const Measurement::MemberMask& member_mask);
@@ -46,6 +47,7 @@ protected:
     boost::shared_ptr<AbstractFilter> filter;
     base::Time last_measurement_time;
     double max_time_delta;
+    bool allow_integration_of_older_measurements;
 };
 
 }
