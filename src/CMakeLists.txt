@@ -3,6 +3,8 @@ set (POSE_ESTIMATION_HEADERS
     ros_ekf/filter_base.hpp
     ros_ekf/filter_common.hpp
     mtk_ukf/PoseWithVelocity.hpp
+    mtk_ukf/Bias.hpp
+    mtk_ukf/PoseWithVelocityBias.hpp
     mtk_ukf/ProcessModels.hpp
     mtk_ukf/MeasurementModels.hpp
     PoseEstimator.hpp
