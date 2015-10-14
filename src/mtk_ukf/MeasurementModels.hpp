@@ -15,6 +15,17 @@ measurementModel (const PoseWithVelocityType &state, const Eigen::Matrix<unsigne
 {
     return state.getSubStateVector(mask);
 }
+
+
+/** Measurement model for the 12D robot state (pose and velocity)
+ *  The mask defines which subset is returned.
+ */
+template <typename PoseWithVelocityType>
+Eigen::Matrix<typename PoseWithVelocityType::scalar, -1, 1>
+measurementModelWithBias (const PoseWithVelocityType &state, const Eigen::Matrix<unsigned, PoseWithVelocityType::PoseWithVelocityDOF, 1>& mask)
+{
+    return state.getSubStateVector(mask) - state.bias.getBiasForSubState(mask);
+}
     
 }
 

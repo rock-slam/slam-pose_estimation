@@ -13,11 +13,13 @@ PoseUKF::PoseUKF() : dirty(true)
 
     last_acceleration_sample.time.microseconds = 0;
 
-    process_noise_cov = Covariance::Zero();
-    MTK::setDiagonal(process_noise_cov, &WPoseState::position, 0.01);
-    MTK::setDiagonal(process_noise_cov, &WPoseState::orientation, 0.001);
-    MTK::setDiagonal(process_noise_cov, &WPoseState::velocity, 0.00001);
-    MTK::setDiagonal(process_noise_cov, &WPoseState::angular_velocity, 0.00001);
+    process_noise_cov = MTK_UKF::cov::Zero();
+
+    setDiagonal(process_noise_cov, &PoseState::position, 0.01);
+    setDiagonal(process_noise_cov, &PoseState::orientation, 0.001);
+    setDiagonal(process_noise_cov, &PoseState::velocity, 0.00001);
+    setDiagonal(process_noise_cov, &PoseState::angular_velocity, 0.00001);
+    setDiagonal(process_noise_cov, &PoseStateBias::bias, 0.00001);
 }
 
 void PoseUKF::setInitialState(const base::samples::RigidBodyState& body_state)
@@ -30,15 +32,27 @@ void PoseUKF::setInitialState(const base::samples::RigidBodyState& body_state)
     }
     
     WPoseState state;
-    Covariance cov;
-    rigidBodyStateToUKFState(body_state, state, cov);
-    
+    Covariance rbs_cov;
+    rigidBodyStateToUKFState(body_state, state.pose_with_velocity, rbs_cov);
+    MTK_UKF::cov cov = MTK_UKF::cov::Zero();
+    cov.block(0,0,PoseStateBias::PoseWithVelocityDOF, PoseStateBias::PoseWithVelocityDOF) = rbs_cov;
+    MTK::setDiagonal(cov, &PoseStateBias::bias, 0.001);
+    state.bias.bias = BiasState::bias_type::Zero();
+
+    // set yaw bias
+    WPoseState::bias_type::map_type map;
+    map(0) = BodyStateMemberYaw;
+    state.bias.setBiasMap(map);
+
     ukf.reset(new MTK_UKF(state, cov));
 }
 
 void PoseUKF::setProcessNoiseCovariance(const Covariance& noise_cov)
 {
-    process_noise_cov = noise_cov;
+    MTK_UKF::cov cov = MTK_UKF::cov::Zero();
+    cov.block(0,0,PoseStateBias::PoseWithVelocityDOF, PoseStateBias::PoseWithVelocityDOF) = noise_cov;
+    MTK::setDiagonal(cov, &PoseStateBias::bias, 0.00001);
+    process_noise_cov = cov;
 }
 
 void PoseUKF::predictionStep(const double delta)
@@ -53,7 +67,7 @@ void PoseUKF::predictionStep(const double delta)
         ukf->predict(boost::bind(processModel<WPoseState>, _1 , delta), MTK_UKF::cov(delta * process_noise_cov));
     else
     {
-        Covariance process_noise = process_noise_cov;
+        MTK_UKF::cov process_noise = process_noise_cov;
         process_noise.block(6,6,3,3) = 2.0 * last_acceleration_sample.cov_acceleration;
         ukf->predict(boost::bind(processModelWithAcceleration<WPoseState>, _1, last_acceleration_sample.acceleration, delta), MTK_UKF::cov(delta * process_noise));
     }
@@ -91,14 +105,14 @@ void PoseUKF::correctionStep(const Measurement& measurement)
     {
         dirty = true;
 
-        WPoseState state;
+        PoseState state;
         Covariance cov;
         rigidBodyStateToUKFState(measurement.body_state, state, cov);
 
         // check state for NaN values
         Eigen::Matrix<unsigned, BODY_STATE_SIZE, 1> mask = measurement.member_mask.block(0,0,BODY_STATE_SIZE,1);
-        Eigen::Matrix<WPoseState::scalar_type, WPoseState::DOF, 1> state_vector = state.getStateVector();
-        for(unsigned i = 0; i < WPoseState::DOF; i++)
+        Eigen::Matrix<WPoseState::scalar_type, PoseState::DOF, 1> state_vector = state.getStateVector();
+        for(unsigned i = 0; i < PoseState::DOF; i++)
         {
             if(mask(i,0) != 0 && base::isNaN<WPoseState::scalar_type>(state_vector(i,0)))
             {
@@ -109,8 +123,8 @@ void PoseUKF::correctionStep(const Measurement& measurement)
         }
 
         // check covariance matrix for NaN values
-        for(unsigned i = 0; i < WPoseState::DOF; i++)
-            for(unsigned j = 0; j < WPoseState::DOF; j++)
+        for(unsigned i = 0; i < PoseState::DOF; i++)
+            for(unsigned j = 0; j < PoseState::DOF; j++)
             {
                 if(mask(i,0) != 0 && mask(j,0) != 0 && base::isNaN<Covariance::Scalar>(cov(i,j)))
                 {
@@ -130,7 +144,7 @@ void PoseUKF::correctionStep(const Measurement& measurement)
         unsigned measurement_size = sub_state.rows();
 
         std::vector<unsigned> m_index2mask_index;
-        for(unsigned i = 0; i < WPoseState::DOF; i++)
+        for(unsigned i = 0; i < PoseState::DOF; i++)
         {
             if(mask(i) > 0)
             {
@@ -148,7 +162,7 @@ void PoseUKF::correctionStep(const Measurement& measurement)
         }
 
         // apply new measurement
-        ukf->update(sub_state, boost::bind(measurementModel<WPoseState>, _1, mask),
+        ukf->update(sub_state, boost::bind(measurementModelWithBias<WPoseState>, _1, mask),
                     boost::bind(ukfom::id< Eigen::MatrixXd >, sub_cov),
                     ukfom::accept_any_mahalanobis_distance<MTK_UKF::scalar_type>);
     }
@@ -157,12 +171,15 @@ void PoseUKF::correctionStep(const Measurement& measurement)
 const base::samples::RigidBodyState& PoseUKF::getCurrentState()
 {
     if(dirty)
-	UKFStateToRigidBodyState(ukf->mu(), ukf->sigma(), body_state);
+    {
+        PoseState::cov cov = ukf->sigma().block(0, 0, PoseState::DOF, PoseState::DOF);
+	UKFStateToRigidBodyState(ukf->mu().pose_with_velocity, cov, body_state);
+    }
     
     return body_state;
 }
 
-void PoseUKF::rigidBodyStateToUKFState(const base::samples::RigidBodyState& body_state, PoseUKF::WPoseState& state, ukfom::ukf< PoseUKF::WPoseState >::cov& covariance)
+void PoseUKF::rigidBodyStateToUKFState(const base::samples::RigidBodyState& body_state, PoseUKF::PoseState& state, PoseState::cov& covariance)
 {
     state.position = body_state.position;
     state.orientation = MTK::SO3<double>(body_state.orientation);
@@ -176,7 +193,7 @@ void PoseUKF::rigidBodyStateToUKFState(const base::samples::RigidBodyState& body
     covariance.block(9, 9, 3, 3) = body_state.cov_angular_velocity;
 }
 
-void PoseUKF::UKFStateToRigidBodyState(const PoseUKF::WPoseState& state, const ukfom::ukf< PoseUKF::WPoseState >::cov& covariance, base::samples::RigidBodyState& body_state)
+void PoseUKF::UKFStateToRigidBodyState(const PoseUKF::PoseState& state, const PoseState::cov& covariance, base::samples::RigidBodyState& body_state)
 {
     body_state.position = state.position;
     body_state.orientation = state.orientation;

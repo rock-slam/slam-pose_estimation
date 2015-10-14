@@ -4,6 +4,8 @@
 #include <pose_estimation/Measurement.hpp>
 #include <pose_estimation/AbstractFilter.hpp>
 #include <pose_estimation/mtk_ukf/PoseWithVelocity.hpp>
+#include <pose_estimation/mtk_ukf/Bias.hpp>
+#include <pose_estimation/mtk_ukf/PoseWithVelocityBias.hpp>
 #include <iostream>
 #include <ukfom/ukf.hpp>
 #include <ukfom/mtkwrap.hpp>
@@ -26,18 +28,27 @@ public:
 protected:
     typedef MTK::SO3<double> MTKRotationType;
     typedef PoseWithVelocity<MTKRotationType> PoseState;
-    typedef ukfom::mtkwrap<PoseState> WPoseState;
+    typedef Bias<1> BiasState;
+    typedef PoseWithVelocityBias<PoseState, BiasState> PoseStateBias;
+    typedef ukfom::mtkwrap<PoseStateBias> WPoseState;
     typedef ukfom::ukf<WPoseState> MTK_UKF;
     
-    void rigidBodyStateToUKFState(const base::samples::RigidBodyState &body_state, WPoseState& state, MTK_UKF::cov& covariance);
-    void UKFStateToRigidBodyState(const WPoseState& state, const MTK_UKF::cov& covariance, base::samples::RigidBodyState &body_state);
+    void rigidBodyStateToUKFState(const base::samples::RigidBodyState &body_state, PoseState& state, PoseState::cov& covariance);
+    void UKFStateToRigidBodyState(const PoseState& state, const PoseState::cov& covariance, base::samples::RigidBodyState &body_state);
+
+    template<class Base, class T, int idx, int cov_size>
+    void setDiagonal(Eigen::Matrix<typename Base::scalar, cov_size, cov_size> &cov,
+                    MTK::SubManifold<T, idx> Base::*, const typename Base::scalar &val)
+    {
+        cov.diagonal().template segment<T::DOF>(idx).setConstant(val);
+    }
     
 protected:    
     boost::shared_ptr<MTK_UKF> ukf;
     bool dirty;
     base::samples::RigidBodyState body_state;
     base::samples::RigidBodyAcceleration last_acceleration_sample;
-    Covariance process_noise_cov;
+    MTK_UKF::cov process_noise_cov;
 };
 
 }
