@@ -74,11 +74,19 @@ public:
         bias_state.setZero();
 
         // populate bias sub state
-        for(unsigned i = 0; i < DOF; i++)
+        unsigned sub_state_offset = 0;
+        for(unsigned i = 0; i < mask_dim; i++)
         {
-            if(bias_map[i] < mask.rows() && mask[bias_map[i]] > 0)
+            if(mask[i] > 0)
             {
-                bias_state[i] = bias[i];
+                for(unsigned j = 0; j < DOF; j++)
+                {
+                    if(bias_map[j] == i)
+                    {
+                        bias_state[sub_state_offset] = bias[j];
+                    }
+                }
+                sub_state_offset++;
             }
         }
 
