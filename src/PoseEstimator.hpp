@@ -19,8 +19,8 @@ struct newer_measurement : std::binary_function <BodyStateMeasurement,BodyStateM
 
 class PoseEstimator
 {
-public:    
-    PoseEstimator(FilterType filter_type);
+public:
+    PoseEstimator();
     
     void setInitialState(const base::samples::RigidBodyState &body_state);
     void setProcessNoise(const Covariance& process_noise);

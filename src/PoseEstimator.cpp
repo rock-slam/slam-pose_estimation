@@ -7,12 +7,9 @@
 namespace pose_estimation
 {
 
-PoseEstimator::PoseEstimator(FilterType filter_type) : last_measurement_time(base::Time::fromSeconds(0.0)), max_time_delta(base::infinity<double>())
+PoseEstimator::PoseEstimator() : last_measurement_time(base::Time::fromSeconds(0.0)), max_time_delta(base::infinity<double>())
 {
-    if(filter_type == UKF)
-	filter.reset(new PoseUKF());
-    else  
-	filter.reset(new PoseEKF());
+    filter.reset(new PoseUKF());
 }
 
 void PoseEstimator::setInitialState(const base::samples::RigidBodyState& body_state)
