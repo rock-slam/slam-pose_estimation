@@ -1,17 +1,19 @@
 set (POSE_ESTIMATION_HEADERS
-    mtk_ukf/PoseWithVelocity.hpp
-    mtk_ukf/ProcessModels.hpp
-    mtk_ukf/MeasurementModels.hpp
     PoseEstimator.hpp
-    PoseEstimatorConfig.hpp
     AbstractFilter.hpp
     Measurement.hpp
-    PoseUKF.hpp
+    Exceptions.hpp
+    EulerConversion.hpp
+    UKF.hpp
+    pose_with_velocity/PoseWithVelocity.hpp
+    pose_with_velocity/PoseUKF.hpp
+    pose_with_velocity/BodyStateMeasurement.hpp
     )
     
 set (POSE_ESTIMATION_SOURCES
     PoseEstimator.cpp
-    PoseUKF.cpp
+    AbstractFilter.cpp
+    pose_with_velocity/PoseUKF.cpp
     )
 
 rock_library(pose_estimation
