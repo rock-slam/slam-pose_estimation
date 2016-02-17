@@ -18,8 +18,6 @@ namespace pose_estimation
 
         void correctionStep(const Measurement& measurement);
 
-        void userIntegration(const Measurement& measurement);
-
         virtual void predictionStep(const double delta) = 0;
 
 	virtual const FilterState& getCurrentState() = 0;
@@ -32,8 +30,6 @@ namespace pose_estimation
         virtual void setProcessNoiseCovarianceImpl(const FilterState::Cov& noise_cov) = 0;
 
         virtual void correctionStepImpl(const Measurement& measurement) = 0;
-
-        virtual void userIntegrationImpl(const Measurement& measurement) = 0;
 
         bool checkMeasurement(const Measurement& measurement, Measurement& measurement_corrected);
     };

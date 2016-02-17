@@ -97,12 +97,7 @@ void PoseEstimator::processMeasurement(const Measurement& measurement)
     }
     
     // correction step
-    if(measurement.integration == Filter)
-        filter->correctionStep(measurement);
-    else if(measurement.integration == User)
-        filter->userIntegration(measurement);
-    else
-        throw std::runtime_error("Unknown integration type selected!");
+    filter->correctionStep(measurement);
     
     last_measurement_time = measurement.time;
 }

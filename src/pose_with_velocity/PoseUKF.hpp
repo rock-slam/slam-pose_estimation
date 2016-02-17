@@ -1,9 +1,9 @@
 #ifndef _POSE_ESTIMATION_POSE_UKF_HPP
 #define _POSE_ESTIMATION_POSE_UKF_HPP
 
+#include "PoseWithVelocity.hpp"
 #include <pose_estimation/Measurement.hpp>
 #include <pose_estimation/UKF.hpp>
-#include "PoseWithVelocity.hpp"
 #include <map>
 
 namespace pose_estimation
@@ -18,8 +18,7 @@ public:
     virtual void predictionStep(const double delta);
     
 protected:
-    virtual void correctionStepImpl(const Measurement& measurement);
-    virtual void userIntegrationImpl(const Measurement& measurement);
+    virtual void correctionStepUser(const Measurement& measurement);
 
     virtual void muToUKFState(const FilterState::Mu &mu, WState& state) const;
     virtual void UKFStateToMu(const WState& state, FilterState::Mu &mu) const;

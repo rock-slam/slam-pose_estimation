@@ -7,32 +7,6 @@
 namespace pose_estimation
 {
 
-/** Measurement model for the 12D robot state (pose and velocity)
- *  The mapping defines which subset is returned.
- */
-template <typename PoseWithVelocityType>
-Eigen::Matrix<typename PoseWithVelocityType::scalar, -1, 1>
-measurementModel (const PoseWithVelocityType &state, const Eigen::Matrix<unsigned, -1, 1>& mapping)
-{
-    //return state.getSubStateVector(mapping);
-
-    Eigen::Matrix<typename PoseWithVelocityType::scalar, PoseWithVelocityType::DOF, 1> state_vector;
-    state_vector.block(MTK::getStartIdx(&PoseWithVelocity::position),0,MTK::getDof(&PoseWithVelocity::position),1) = state.position;
-    state_vector.block(MTK::getStartIdx(&PoseWithVelocity::orientation),0,MTK::getDof(&PoseWithVelocity::orientation),1) = MTK::SO3<typename PoseWithVelocityType::scalar>::log(state.orientation);
-    state_vector.block(MTK::getStartIdx(&PoseWithVelocity::velocity),0,MTK::getDof(&PoseWithVelocity::velocity),1) = state.velocity;
-    state_vector.block(MTK::getStartIdx(&PoseWithVelocity::angular_velocity),0,MTK::getDof(&PoseWithVelocity::angular_velocity),1) = state.angular_velocity;
-
-    Eigen::Matrix<typename PoseWithVelocityType::scalar, -1, 1> sub_state_vector;
-    assert(mapping.rows() <= PoseWithVelocityType::DOF);
-    sub_state_vector.resize(mapping.rows());
-    for(unsigned i = 0; i < mapping.rows(); i++)
-    {
-        sub_state_vector(i) = state_vector(mapping(i));
-    }
-    return sub_state_vector;
-
-}
-
 /** Process model for the 12D robot state.
  * Applies the current velocity to update the robot pose.
  */
@@ -84,17 +58,12 @@ void PoseUKF::predictionStep(const double delta)
     }
 }
 
-void PoseUKF::correctionStepImpl(const Measurement& measurement)
+void PoseUKF::correctionStepUser(const Measurement& measurement)
 {
-    // apply new measurement
-    ukf->update(measurement.mu, boost::bind(measurementModel<WState>, _1, measurement.state_mapping),
-                boost::bind(ukfom::id< Eigen::MatrixXd >, measurement.cov),
-                ukfom::accept_any_mahalanobis_distance<MTK_UKF::scalar_type>);
-}
-
-void PoseUKF::userIntegrationImpl(const Measurement& measurement)
-{
-    latest_measurements[measurement.measurement_name] = measurement;
+    if(measurement.measurement_name == "acceleration")
+        latest_measurements[measurement.measurement_name] = measurement;
+    else
+        LOG_ERROR_S << "Measurement " << measurement.measurement_name << " is not supported by the PoseUKF filter.";
 }
 
 void PoseUKF::muToUKFState(const FilterState::Mu& mu, WState& state) const

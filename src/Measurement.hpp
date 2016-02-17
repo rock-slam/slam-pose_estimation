@@ -20,8 +20,8 @@ struct StateAndCovariance
 
 enum MeasurementIntegration
 {
-    Filter,
-    User
+    StateMapping,
+    UserDefined
 };
 
 struct Measurement : public StateAndCovariance
@@ -30,14 +30,14 @@ struct Measurement : public StateAndCovariance
 
     base::Time time;
 
-    // This maps the measurement state to the actual filter state
-    StateMapping state_mapping;
-
     std::string measurement_name;
 
     MeasurementIntegration integration;
 
-    Measurement() : integration(Filter) {}
+    // This maps the measurement state to the actual filter state
+    StateMapping state_mapping;
+
+    Measurement() : integration(UserDefined) {}
 };
 
 }

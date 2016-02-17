@@ -72,7 +72,7 @@ struct BodyStateMeasurement
         measurement.measurement_name += body_state.sourceFrame;
         measurement.measurement_name += "In";
         measurement.measurement_name += body_state.targetFrame;
-        measurement.integration = pose_estimation::Filter;
+        measurement.integration = pose_estimation::StateMapping;
     }
 
     static void fromRigidBodyState(const base::samples::RigidBodyState &body_state, StateAndCovariance::Mu &mu, StateAndCovariance::Cov &cov)

@@ -32,13 +32,6 @@ void AbstractFilter::correctionStep(const Measurement& measurement)
         correctionStepImpl(m_corrected);
 }
 
-void AbstractFilter::userIntegration(const Measurement& measurement)
-{
-    Measurement m_corrected;
-    if(checkMeasurement(measurement, m_corrected))
-        userIntegrationImpl(m_corrected);
-}
-
 bool AbstractFilter::checkMeasurement(const Measurement& measurement, Measurement& measurement_corrected)
 {
     // check if measurement is healty
@@ -57,24 +50,27 @@ bool AbstractFilter::checkMeasurement(const Measurement& measurement, Measuremen
     }
 
     // check state mapping
-    Measurement::StateMapping mapping = measurement.state_mapping;
-    unsigned state_size = getStateSize();
-    if(measurement.state_mapping.rows() > state_size)
+    if(measurement.integration == pose_estimation::StateMapping)
     {
-        LOG_ERROR_S << "State mapping can not extend the current state size! This measurement " << measurement.measurement_name << " will be skipped.";
-        return false;
-    }
-    for(unsigned r = 0; r < measurement.state_mapping.rows(); r++)
-    {
-        if(base::isNaN<Measurement::StateMapping::Scalar>(measurement.state_mapping(r)))
+        Measurement::StateMapping mapping = measurement.state_mapping;
+        unsigned state_size = getStateSize();
+        if(measurement.state_mapping.rows() > state_size)
         {
-            LOG_ERROR_S << "State mapping contains NaN values! This measurement " << measurement.measurement_name << " will be skipped.";
+            LOG_ERROR_S << "State mapping can not extend the current state size! This measurement " << measurement.measurement_name << " will be skipped.";
             return false;
         }
-        else if(measurement.state_mapping(r) > state_size)
+        for(unsigned r = 0; r < measurement.state_mapping.rows(); r++)
         {
-            LOG_ERROR_S  << "State mapping can not extend the current state size! This measurement " << measurement.measurement_name << " will be skipped.";
-            return false;
+            if(base::isNaN<Measurement::StateMapping::Scalar>(measurement.state_mapping(r)))
+            {
+                LOG_ERROR_S << "State mapping contains NaN values! This measurement " << measurement.measurement_name << " will be skipped.";
+                return false;
+            }
+            else if(measurement.state_mapping(r) > state_size)
+            {
+                LOG_ERROR_S  << "State mapping can not extend the current state size! This measurement " << measurement.measurement_name << " will be skipped.";
+                return false;
+            }
         }
     }
 
@@ -104,7 +100,7 @@ bool AbstractFilter::checkMeasurement(const Measurement& measurement, Measuremen
             else if(c==r && cov(r,c) == 0.0)
             {
                 // handle zero variances
-                LOG_WARN_S << "Covariance diagonal contains zero values. Override them with %d", 1e-9;
+                LOG_WARN_S << "Covariance diagonal contains zero values. Override them with " << 1e-9;
                 cov(r,c) = 1e-9;
             }
         }

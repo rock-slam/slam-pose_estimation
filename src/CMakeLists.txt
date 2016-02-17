@@ -5,6 +5,7 @@ set (POSE_ESTIMATION_HEADERS
     Exceptions.hpp
     EulerConversion.hpp
     UKF.hpp
+    ManifoldHelper.hpp
     pose_with_velocity/PoseWithVelocity.hpp
     pose_with_velocity/PoseUKF.hpp
     pose_with_velocity/BodyStateMeasurement.hpp
