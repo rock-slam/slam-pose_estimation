@@ -20,7 +20,7 @@ namespace pose_estimation
 
         virtual void predictionStep(const double delta) = 0;
 
-	virtual const FilterState& getCurrentState() = 0;
+	virtual bool getCurrentState(FilterState& filter_state) = 0;
 
         virtual unsigned getStateSize() const = 0;
 

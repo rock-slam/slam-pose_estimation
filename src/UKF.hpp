@@ -55,14 +55,15 @@ public:
         return unsigned(State::DOF);
     }
 
-    virtual const FilterState& getCurrentState()
+    virtual bool getCurrentState(FilterState& filter_state)
     {
         if(ukf.get() != NULL)
         {
-            UKFStateToMu(ukf->mu(), current_state.mu);
-            current_state.cov = ukf->sigma();
+            UKFStateToMu(ukf->mu(), filter_state.mu);
+            filter_state.cov = ukf->sigma();
+            return true;
         }
-        return current_state;
+        return false;
     }
 
 protected:
@@ -110,9 +111,6 @@ protected:
     typename MTK_UKF::cov process_noise_cov;
     boost::shared_ptr<MTK_UKF> ukf;
     typename MahalanobisDistance<typename MTK_UKF::scalar_type>::Func allowed_distance;
-
-private:
-    FilterState current_state;
 };
 
 }

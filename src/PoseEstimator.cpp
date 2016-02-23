@@ -106,9 +106,8 @@ bool PoseEstimator::getEstimatedState(AbstractFilter::FilterState &estimated_sta
 {
     if(last_measurement_time.isNull())
 	return false;
-    
-    estimated_state = filter->getCurrentState();
-    return true;
+
+    return filter->getCurrentState(estimated_state);
 }
 
 }
