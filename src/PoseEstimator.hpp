@@ -35,6 +35,7 @@ public:
     bool measurementsInQueue() {return !measurement_queue.empty();}
     size_t measurementQueueSize() {return measurement_queue.size();}
     
+    base::Time getLastMeasurementTime() {return last_measurement_time;}
     
 protected:
 
