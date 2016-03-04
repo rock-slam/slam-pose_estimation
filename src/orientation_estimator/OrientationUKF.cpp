@@ -55,8 +55,8 @@ PoseUKF::PoseUKF(const FilterState& initial_state) : UKF<pose_estimation::PoseWi
 {
     setInitialState(initial_state);
 
-    gyro_bias_var = (2.0 * 1.0/0.01 *gyro_bias_std^2 / gyro_bias_tau);
-    acc_bias_var = (2.0 * 1.0/0.01 *acc_bias_std^2 / acc_bias_tau);
+    gyro_bias_var = (2.0 *pow(gyro_bias_std,2) / gyro_bias_tau) * 0.01;
+    acc_bias_var = (2.0 *pow(acc_bias_std,2) / acc_bias_tau) * 0.01;
     
     process_noise_cov = MTK_UKF::cov::Zero();
     MTK::setDiagonal(process_noise_cov, &WState::orientation, gyro_var);
@@ -73,7 +73,7 @@ PoseUKF::PoseUKF(const FilterState& initial_state) : UKF<pose_estimation::PoseWi
     
     Gravity[0] = 0.0;
     Gravity[1] = 0.0;
-    Gravity[2] = GWGS0*((1+GWGS1*pow(sin(latitude),2))/sqrt(1-pow(ECC,2)*pow(sin(latitude),2)));;
+    Gravity[2] = GWGS0*((1+GWGS1*pow(sin(location.latitude),2))/sqrt(1-pow(ECC,2)*pow(sin(location.latitude),2)));;
     
 }
 
@@ -137,8 +137,8 @@ void PoseUKF::UKFStateToMu(const WState& state, FilterState::Mu& mu) const
     EulerConversion::quadToEuler(orientation, euler);
     mu.block(0, 0, 3, 1) = euler;
     mu.block(3, 0, 3, 1) = state.velocity;
-    mu.block(6, 0, 3, 1) = state.velocity;
-    mu.block(9, 0, 3, 1) = state.velocity;        
+    mu.block(6, 0, 3, 1) = state.bias_gyro;
+    mu.block(9, 0, 3, 1) = state.bias_acc;        
     //Eigen::Vector3d euler_velocity;
     //Eigen::Vector3d angular_velocity = state.angular_velocity;
     //EulerConversion::angleAxisToEulerAngleVelocity(angular_velocity, euler_velocity);
