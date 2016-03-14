@@ -1,4 +1,4 @@
-#include "PoseUKF.hpp"
+#include "OrientationUKF.hpp"
 #include <base/Float.hpp>
 #include <base/Logging.hpp>
 #include <pose_estimation/EulerConversion.hpp>
@@ -33,81 +33,81 @@
 #define EARTHW  7.292115e-05 /**< Earth angular velocity in rad/s **/
 #endif
 
-namespace pose_estimation
+namespace orientation
 {
 
 /** Process model with acceleration for the 12D robot state.
  * Applies the current velocity and acceleration to update the robot pose.
  */
-template <typename PoseWithVelocityType>
-PoseWithVelocityType
-processModel (const PoseWithVelocityType &state, const Eigen::Vector3d& acc, const Eigen::Vector3d& omega, double delta_time)
+template <typename OrientationState>
+OrientationState
+processModel (const OrientationState &state, const Eigen::Vector3d& acc, const Eigen::Vector3d& omega, double delta_time, const OrientationUKF::ParamsType &params)
 {
-    PoseWithVelocityType new_state(state);
-    new_state.orientation.boxplus(omega - new_state.bias_gyro - new_state.orientation.matrix().inverse()*Earth_rotation, delta_time);
-    new_state.velocity.boxplus(new_state.orientation.matrix()*(acc - b_acc) - Gravity, delta_time);
-    new_state.bias_gyro.boxplus(-1.0/gyro_bias_tau * new_state.bias_gyro, delta_time);
-    new_state.bias_acc.boxplus(-1.0/acc_bias_tau * new_state.bias_acc, delta_time);
+    OrientationState new_state(state);
+    new_state.orientation.boxplus(omega - new_state.bias_gyro - new_state.orientation.matrix().inverse()*params.Earth_rotation, delta_time);
+    new_state.velocity.boxplus(new_state.orientation.matrix()*(acc - new_state.bias_acc) - params.Gravity, delta_time);
+    new_state.bias_gyro.boxplus(-1.0/params.gyro_bias_tau * new_state.bias_gyro, delta_time);
+    new_state.bias_acc.boxplus(-1.0/params.acc_bias_tau * new_state.bias_acc, delta_time);
     return new_state;
 }
 
-PoseUKF::PoseUKF(const FilterState& initial_state) : UKF<pose_estimation::PoseWithVelocity>()
+OrientationUKF::OrientationUKF(const AbstractFilter::FilterState& initial_state)
 {
     setInitialState(initial_state);
 
-    gyro_bias_var = (2.0 *pow(gyro_bias_std,2) / gyro_bias_tau) * 0.01;
-    acc_bias_var = (2.0 *pow(acc_bias_std,2) / acc_bias_tau) * 0.01;
+    params.gyro_bias_var = (2.0 *pow(params.gyro_bias_std,2) / params.gyro_bias_tau) * 0.01;
+    params.acc_bias_var = (2.0 *pow(params.acc_bias_std,2) / params.acc_bias_tau) * 0.01;
     
     process_noise_cov = MTK_UKF::cov::Zero();
-    MTK::setDiagonal(process_noise_cov, &WState::orientation, gyro_var);
-    MTK::setDiagonal(process_noise_cov, &WState::velocity, acc_var);
-    MTK::setDiagonal(process_noise_cov, &WState::bias_gyro, gyro_bias_var);
-    MTK::setDiagonal(process_noise_cov, &WState::bias_acc, acc_bias_var);
+    MTK::setDiagonal(process_noise_cov, &WState::orientation, params.gyro_var);
+    MTK::setDiagonal(process_noise_cov, &WState::velocity, params.acc_var);
+    MTK::setDiagonal(process_noise_cov, &WState::bias_gyro, params.gyro_bias_var);
+    MTK::setDiagonal(process_noise_cov, &WState::bias_acc, params.acc_bias_var);
     
-    Earth_rotation[0] = cos(location.latitude)*EARTHW;
-    Earth_rotation[1] = 0.0;
-    Earth_rotation[2] = -sin(location.latitude)*EARTHW;
+    params.Earth_rotation[0] = cos(params.Latitude)*EARTHW;
+    params.Earth_rotation[1] = 0.0;
+    params.Earth_rotation[2] = -sin(params.Latitude)*EARTHW;
     
     /** Gravity affects by the altitude (aprox the value r = Re **/
     //g = g*pow(Re/(Re+altitude), 2); //assume zero altitude for now
     
-    Gravity[0] = 0.0;
-    Gravity[1] = 0.0;
-    Gravity[2] = GWGS0*((1+GWGS1*pow(sin(location.latitude),2))/sqrt(1-pow(ECC,2)*pow(sin(location.latitude),2)));;
+    params.Gravity[0] = 0.0;
+    params.Gravity[1] = 0.0;
+    params.Gravity[2] = GWGS0*((1+GWGS1*pow(sin(params.Latitude),2))/sqrt(1-pow(ECC,2)*pow(sin(params.Latitude),2)));;
     
 }
 
-void PoseUKF::predictionStep(const double delta)
+void OrientationUKF::predictionStep(const double delta)
 {
-    std::map<std::string, Measurement>::const_iterator it1 = latest_measurements.find("acceleration");
-    std::map<std::string, Measurement>::const_iterator it2 = latest_measurements.find("rotation_rate");
+    std::map<std::string, pose_estimation::Measurement>::const_iterator it1 = latest_measurements.find("acceleration");
+    std::map<std::string, pose_estimation::Measurement>::const_iterator it2 = latest_measurements.find("rotation_rate");
 
     MTK_UKF::cov process_noise = process_noise_cov;
     
-    gyro_bias_var = (2.0 * pow(gyro_bias_std,2) / gyro_bias_tau)* delta;
-    acc_bias_var = (2.0 * pow(acc_bias_std,2) / acc_bias_tau)* delta;
+    params.gyro_bias_var = (2.0 * pow(params.gyro_bias_std,2) / params.gyro_bias_tau)* delta;
+    params.acc_bias_var = (2.0 * pow(params.acc_bias_std,2) / params.acc_bias_tau)* delta;
     
-    MTK::setDiagonal(process_noise_cov, &WState::bias_gyro, gyro_bias_var);
-    MTK::setDiagonal(process_noise_cov, &WState::bias_acc, acc_bias_var);
+    MTK::setDiagonal(process_noise_cov, &WState::bias_gyro, params.gyro_bias_var);
+    MTK::setDiagonal(process_noise_cov, &WState::bias_acc, params.acc_bias_var);
     
-    MTK::setDiagonal(process_noise_cov, &WState::orientation, gyro_var * delta); // might be pow(delta,2), depending on sensor spec. 
-    MTK::setDiagonal(process_noise_cov, &WState::velocity, acc_var * delta);
+    MTK::setDiagonal(process_noise_cov, &WState::orientation, params.gyro_var * delta); // might be pow(delta,2), depending on sensor spec. 
+    MTK::setDiagonal(process_noise_cov, &WState::velocity, params.acc_var * delta);
     
     //process_noise.block(6,6,3,3) = 2.0 * it1->second.cov; 
     // need to do uncertainty matrix calculations
-    ukf->predict(boost::bind(processModel<WState>, _1, it1->second.mu, it2->second.mu, delta), MTK_UKF::cov(process_noise));
+    ukf->predict(boost::bind(processModel<WState>, _1, it1->second.mu, it2->second.mu, delta, params), MTK_UKF::cov(process_noise));
 
 }
 
-void PoseUKF::correctionStepUser(const Measurement& measurement)
+void OrientationUKF::correctionStepUser(const pose_estimation::Measurement& measurement)
 {
     if(measurement.measurement_name == "acceleration")
         latest_measurements[measurement.measurement_name] = measurement;
     else
-        LOG_ERROR_S << "Measurement " << measurement.measurement_name << " is not supported by the PoseUKF filter.";
+        LOG_ERROR_S << "Measurement " << measurement.measurement_name << " is not supported by the Orientation filter.";
 }
 
-void PoseUKF::muToUKFState(const FilterState::Mu& mu, WState& state) const
+void OrientationUKF::muToUKFState(const FilterState::Mu& mu, WState& state) const
 {
     assert(mu.rows() >= WState::DOF);
 
@@ -126,7 +126,7 @@ void PoseUKF::muToUKFState(const FilterState::Mu& mu, WState& state) const
 
 }
 
-void PoseUKF::UKFStateToMu(const WState& state, FilterState::Mu& mu) const
+void OrientationUKF::UKFStateToMu(const WState& state, FilterState::Mu& mu) const
 {
     mu.resize(WState::DOF);
     mu.setZero();
@@ -144,5 +144,21 @@ void PoseUKF::UKFStateToMu(const WState& state, FilterState::Mu& mu) const
     //EulerConversion::angleAxisToEulerAngleVelocity(angular_velocity, euler_velocity);
     //mu.block(9, 0, 3, 1) = euler_velocity;
 }
+
+    void OrientationUKF::setLatitude(const double latitude)
+    {
+      params.Latitude = latitude;
+    }
+    
+    void OrientationUKF::setIMUParams(const double gyro_var, const double acc_var, const double gyro_bias_std, 
+				   const double acc_bias_std, const double gyro_bias_tau, const double acc_bias_tau)
+    {
+      params.gyro_var = gyro_var;
+      params.acc_var = acc_var;
+      params.gyro_bias_std = gyro_bias_std;
+      params.acc_bias_std = acc_bias_std;
+      params.gyro_bias_tau = gyro_bias_tau;
+      params.acc_bias_tau = acc_bias_tau;
+    }
 
 }
