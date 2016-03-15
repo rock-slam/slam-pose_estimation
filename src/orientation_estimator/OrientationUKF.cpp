@@ -44,10 +44,18 @@ OrientationState
 processModel (const OrientationState &state, const Eigen::Vector3d& acc, const Eigen::Vector3d& omega, double delta_time, const OrientationUKF::ParamsType &params)
 {
     OrientationState new_state(state);
-    new_state.orientation.boxplus(omega - new_state.bias_gyro - new_state.orientation.matrix().inverse()*params.Earth_rotation, delta_time);
-    new_state.velocity.boxplus(new_state.orientation.matrix()*(acc - new_state.bias_acc) - params.Gravity, delta_time);
-    new_state.bias_gyro.boxplus(-1.0/params.gyro_bias_tau * new_state.bias_gyro, delta_time);
-    new_state.bias_acc.boxplus(-1.0/params.acc_bias_tau * new_state.bias_acc, delta_time);
+    Eigen::Vector3d angular_velocity = omega - new_state.bias_gyro - new_state.orientation.inverse()*params.Earth_rotation;
+    new_state.orientation.boxplus(angular_velocity, delta_time);
+    
+    Eigen::Vector3d velocity = new_state.orientation*(acc - new_state.bias_acc) - params.Gravity;
+    new_state.velocity.boxplus(velocity, delta_time);
+    
+    Eigen::Vector3d gyro_bias_delta = -1.0/params.gyro_bias_tau * new_state.bias_gyro;
+    new_state.bias_gyro.boxplus(gyro_bias_delta, delta_time);
+    
+    Eigen::Vector3d acc_bias_delta = -1.0/params.acc_bias_tau * new_state.bias_acc;
+    new_state.bias_acc.boxplus(acc_bias_delta, delta_time);
+    
     return new_state;
 }
 
