@@ -7,6 +7,7 @@ set (POSE_ESTIMATION_HEADERS
     pose_with_velocity/BodyStateMeasurement.hpp
     orientation_estimator/OrientationState.hpp
     orientation_estimator/OrientationUKF.hpp
+    orientation_estimator/OrientationUKFConfig.hpp
     )
     
 set (POSE_ESTIMATION_SOURCES
