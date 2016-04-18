@@ -45,9 +45,9 @@ processModel (const OrientationState &state, const Eigen::Vector3d& acc, const E
 
 template <typename OrientationState>
 Eigen::Matrix<typename OrientationState::scalar, -1, 1>
-velocityMeasurementModel ( const OrientationState &state, const Eigen::Quaterniond& current_orientation )
+velocityMeasurementModel ( const OrientationState &state )
 {
-    return state.orientation * (current_orientation.inverse() * state.velocity);
+    return state.orientation.inverse() * state.velocity;
 }
 
 OrientationUKF::OrientationUKF(const AbstractFilter::FilterState& initial_state, const OrientationUKFConfig& config) : config(config)
@@ -96,7 +96,7 @@ void OrientationUKF::correctionStepUser(const pose_estimation::Measurement& meas
     else if(measurement.measurement_name == velocity_measurement)
     {
         // handle velocity measurement
-        ukf->update(measurement.mu, boost::bind(velocityMeasurementModel<State>, _1, ukf->mu().orientation),
+        ukf->update(measurement.mu, boost::bind(velocityMeasurementModel<State>, _1),
                         boost::bind(ukfom::id< Eigen::MatrixXd >, measurement.cov),
                         allowed_distance);
     }
