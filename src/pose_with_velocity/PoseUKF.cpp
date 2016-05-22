@@ -76,10 +76,7 @@ void PoseUKF::muToUKFState(const FilterState::Mu& mu, WState& state) const
     EulerConversion::eulerToQuad(euler, orientation);
     state.orientation = MTK::SO3<double>(orientation);
     state.velocity = mu.block(6, 0, 3, 1);
-    Eigen::Vector3d angle_axis;
-    Eigen::Vector3d euler_velocity = mu.block(9, 0, 3, 1);
-    EulerConversion::eulerAngleVelocityToAngleAxis(euler_velocity, angle_axis);
-    state.angular_velocity = angle_axis;
+    state.angular_velocity = mu.block(9, 0, 3, 1);
 
 }
 
@@ -94,10 +91,7 @@ void PoseUKF::UKFStateToMu(const WState& state, FilterState::Mu& mu) const
     EulerConversion::quadToEuler(orientation, euler);
     mu.block(3, 0, 3, 1) = euler;
     mu.block(6, 0, 3, 1) = state.velocity;
-    Eigen::Vector3d euler_velocity;
-    Eigen::Vector3d angular_velocity = state.angular_velocity;
-    EulerConversion::angleAxisToEulerAngleVelocity(angular_velocity, euler_velocity);
-    mu.block(9, 0, 3, 1) = euler_velocity;
+    mu.block(9, 0, 3, 1) = state.angular_velocity;
 }
 
 }

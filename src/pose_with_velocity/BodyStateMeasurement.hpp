@@ -86,10 +86,7 @@ struct BodyStateMeasurement
         EulerConversion::quadToEuler(body_state.orientation, euler);
         mu.block(3, 0, 3, 1) = euler;
         mu.block(6, 0, 3, 1) = body_state.velocity;
-        Eigen::Vector3d euler_velocity;
-        Eigen::Vector3d angular_velocity = body_state.angular_velocity;
-        EulerConversion::angleAxisToEulerAngleVelocity(angular_velocity, euler_velocity);
-        mu.block(9, 0, 3, 1) = euler_velocity;
+        mu.block(9, 0, 3, 1) = body_state.angular_velocity;
 
         cov.setZero();
         cov.block(0, 0, 3, 3) = body_state.cov_position;
@@ -107,10 +104,7 @@ struct BodyStateMeasurement
         Eigen::Vector3d euler = mu.block(3,0,3,1);
         EulerConversion::eulerToQuad(euler, body_state.orientation);
         body_state.velocity = body_state.orientation * mu.block(6,0,3,1);
-        Eigen::Vector3d euler_velocity = mu.block(9, 0, 3, 1);
-        Eigen::Vector3d angular_velocity;
-        EulerConversion::eulerAngleVelocityToAngleAxis(euler_velocity, angular_velocity);
-        body_state.angular_velocity = angular_velocity;
+        body_state.angular_velocity = mu.block(9, 0, 3, 1);
 
         body_state.cov_position = cov.block(0, 0, 3, 3);
         body_state.cov_orientation = cov.block(3, 3, 3, 3);
