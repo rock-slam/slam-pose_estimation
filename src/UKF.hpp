@@ -38,9 +38,13 @@ template<typename Manifold>
 class UKF : public AbstractFilter
 {
 public:
+    enum {
+        DOF = Manifold::DOF
+    };
     typedef Manifold State;
     typedef ukfom::mtkwrap<Manifold> WState;
     typedef ukfom::ukf<WState> MTK_UKF;
+    typedef Eigen::Matrix<typename State::scalar, int(DOF), 1> StateVector;
     typedef typename MTK_UKF::cov Covariance;
     template <typename Scalar>
     struct MahalanobisDistance
