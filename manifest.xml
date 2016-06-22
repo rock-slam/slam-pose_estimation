@@ -11,6 +11,7 @@
   <depend package="base/cmake" />
   <depend package="base/types" />
   <depend package="slam/mtk" />
+  <depend package="drivers/aggregator" />
   
   <tags>needs_opt</tags>
 </package>
