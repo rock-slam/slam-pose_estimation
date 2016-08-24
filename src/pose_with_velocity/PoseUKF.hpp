@@ -3,28 +3,45 @@
 
 #include "PoseWithVelocity.hpp"
 #include <pose_estimation/Measurement.hpp>
-#include <pose_estimation/UKF.hpp>
-#include <map>
+#include <pose_estimation/UnscentedKalmanFilter.hpp>
 
 namespace pose_estimation
 {
 
-class PoseUKF : public UKF<PoseWithVelocity>
+class PoseUKF : public UnscentedKalmanFilter<PoseWithVelocity>
 {
 public:
-    PoseUKF(const FilterState& initial_state);
+    MEASUREMENT(PositionMeasurement, 3)
+    MEASUREMENT(XYMeasurement, 2)
+    MEASUREMENT(ZMeasurement, 1)
+    MEASUREMENT(OrientationMeasurement, 3)
+    MEASUREMENT(VelocityMeasurement, 3)
+    MEASUREMENT(XYVelocityMeasurement, 2)
+    MEASUREMENT(ZVelocityMeasurement, 1)
+    MEASUREMENT(XVelYawVelMeasurement, 2)
+    MEASUREMENT(AngularVelocityMeasurement, 3)
+    MEASUREMENT(AccelerationMeasurement, 3)
+
+public:
+    PoseUKF(const State& initial_state, const Covariance& state_cov);
     virtual ~PoseUKF() {}
-    
-    virtual void predictionStep(const double delta);
-    
-protected:
-    virtual void correctionStepUser(const Measurement& measurement);
 
-    virtual void muToUKFState(const FilterState::Mu &mu, WState& state) const;
-    virtual void UKFStateToMu(const WState& state, FilterState::Mu &mu) const;
+    void integrateMeasurement(const PositionMeasurement& measurement);
+    void integrateMeasurement(const XYMeasurement& measurement);
+    void integrateMeasurement(const ZMeasurement& measurement);
+    void integrateMeasurement(const OrientationMeasurement& measurement);
+    void integrateMeasurement(const VelocityMeasurement& measurement);
+    void integrateMeasurement(const XYVelocityMeasurement& measurement);
+    void integrateMeasurement(const ZVelocityMeasurement& measurement);
+    void integrateMeasurement(const XVelYawVelMeasurement& measurement);
+    void integrateMeasurement(const AngularVelocityMeasurement& measurement);
+    void integrateMeasurement(const AccelerationMeasurement& measurement);
 
 protected:
-    std::map<std::string, Measurement> latest_measurements;
+    virtual void predictionStepImpl(const double delta);
+
+protected:
+    AccelerationMeasurement acceleration;
 };
 
 }

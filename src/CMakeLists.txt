@@ -1,11 +1,6 @@
 set (POSE_ESTIMATION_HEADERS
-    PoseEstimator.hpp
-    AbstractFilter.hpp
     Measurement.hpp
-    Exceptions.hpp
-    EulerConversion.hpp
-    UKF.hpp
-    ManifoldHelper.hpp
+    UnscentedKalmanFilter.hpp
     StreamAlignmentVerifier.hpp
     pose_with_velocity/PoseWithVelocity.hpp
     pose_with_velocity/PoseUKF.hpp
@@ -13,8 +8,6 @@ set (POSE_ESTIMATION_HEADERS
     )
     
 set (POSE_ESTIMATION_SOURCES
-    PoseEstimator.cpp
-    AbstractFilter.cpp
     StreamAlignmentVerifier.cpp
     pose_with_velocity/PoseUKF.cpp
     )
