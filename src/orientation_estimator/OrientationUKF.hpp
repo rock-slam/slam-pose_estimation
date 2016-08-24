@@ -4,44 +4,39 @@
 #include "OrientationState.hpp"
 #include "OrientationUKFConfig.hpp"
 #include <pose_estimation/Measurement.hpp>
-#include <pose_estimation/UKF.hpp>
-#include <map>
+#include <pose_estimation/UnscentedKalmanFilter.hpp>
 #include <Eigen/Core>
 
 namespace pose_estimation
 {
 
-class OrientationUKF : public UKF<OrientationState>
+class OrientationUKF : public UnscentedKalmanFilter<OrientationState>
 {
 public:
-    static const std::string acceleration_measurement;
-    static const std::string rotation_rate_measurement;
-    static const std::string velocity_measurement;
+    MEASUREMENT(RotationRate, 3)
+    MEASUREMENT(Acceleration, 3)
+    MEASUREMENT(VelocityMeasurement, 3)
 
 public:
-
-    OrientationUKF(const FilterState& initial_state, const OrientationUKFConfig& config);
+    OrientationUKF(const State& initial_state, const Covariance& state_cov, const OrientationUKFConfig& config);
     virtual ~OrientationUKF() {}
     
-    virtual void predictionStep(const double delta);
-
     void setFilterConfiguration(const OrientationUKFConfig& config);
-    
+
+    void integrateMeasurement(const RotationRate& measurement);
+    void integrateMeasurement(const Acceleration& measurement);
+    void integrateMeasurement(const VelocityMeasurement& measurement);
     
 protected:
-    virtual void correctionStepUser(const pose_estimation::Measurement& measurement);
+    void predictionStepImpl(double delta);
 
     /* This needs to called after the filter configuration was updated */
     void updateFilterParamter();
 
-    virtual void muToUKFState(const FilterState::Mu &mu, WState& state) const;
-    virtual void UKFStateToMu(const WState& state, FilterState::Mu &mu) const;
-
 protected:
-    std::map<std::string, pose_estimation::Measurement> latest_measurements;
-    
     OrientationUKFConfig config;
-
+    RotationRate rotation_rate;
+    Acceleration acceleration;
     Eigen::Vector3d earth_rotation;
     Eigen::Vector3d gravity;
 };

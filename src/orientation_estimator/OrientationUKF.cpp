@@ -1,8 +1,6 @@
 #include "OrientationUKF.hpp"
 #include <base/Float.hpp>
 #include <base/Logging.hpp>
-#include <pose_estimation/EulerConversion.hpp>
-#include <assert.h>
 
 /** WGS-84 ellipsoid constants (Nominal Gravity Model and Earth angular velocity) **/
 static const double EQUATORIAL_RADIUS = 6378137.0; /** Equatorial radius in meters **/
@@ -15,10 +13,6 @@ static const double EARTHW = ((2.0*M_PI)/86164.0); //7.292115e-05; /** Earth ang
 
 namespace pose_estimation
 {
-
-const std::string OrientationUKF::acceleration_measurement = "acceleration";
-const std::string OrientationUKF::rotation_rate_measurement = "rotation_rate";
-const std::string OrientationUKF::velocity_measurement = "velocity";
 
 /** Process model for the robot orientation
  */
@@ -44,64 +38,22 @@ processModel (const OrientationState &state, const Eigen::Vector3d& acc, const E
 }
 
 template <typename OrientationState>
-Eigen::Matrix<typename OrientationState::scalar, -1, 1>
+VelocityType
 velocityMeasurementModel ( const OrientationState &state )
 {
-    return state.orientation.inverse() * state.velocity;
+    return VelocityType(state.orientation.inverse() * state.velocity);
 }
 
-OrientationUKF::OrientationUKF(const AbstractFilter::FilterState& initial_state, const OrientationUKFConfig& config) : config(config)
+OrientationUKF::OrientationUKF(const State& initial_state, const Covariance& state_cov, const OrientationUKFConfig& config) : config(config)
 {
-    setInitialState(initial_state);
+    initializeFilter(initial_state, state_cov);
     updateFilterParamter();
-}
-
-void OrientationUKF::predictionStep(const double delta)
-{
-    std::map<std::string, pose_estimation::Measurement>::const_iterator acceleration = latest_measurements.find(acceleration_measurement);
-    std::map<std::string, pose_estimation::Measurement>::const_iterator rotation_rate = latest_measurements.find(rotation_rate_measurement);
-
-    if(acceleration == latest_measurements.end())
-    {
-        LOG_ERROR_S << "No acceleration measurement available! Skipping prediction step.";
-        return;
-    }
-
-    if(rotation_rate == latest_measurements.end())
-    {
-        LOG_ERROR_S << "No angular velocity measurement available! Skipping prediction step.";
-        return;
-    }
-
-    MTK_UKF::cov process_noise = process_noise_cov * delta; // might be pow(delta,2), depending on sensor spec.
-
-    //process_noise.block(6,6,3,3) = 2.0 * it1->second.cov;
-    // need to do uncertainty matrix calculations
-    ukf->predict(boost::bind(processModel<WState>, _1, acceleration->second.mu, rotation_rate->second.mu, delta, config, earth_rotation, gravity), MTK_UKF::cov(process_noise));
-
 }
 
 void OrientationUKF::setFilterConfiguration(const OrientationUKFConfig& config)
 {
     this->config = config;
     updateFilterParamter();
-}
-
-void OrientationUKF::correctionStepUser(const pose_estimation::Measurement& measurement)
-{
-    if(measurement.measurement_name == acceleration_measurement)
-        latest_measurements[measurement.measurement_name] = measurement;
-    else if(measurement.measurement_name == rotation_rate_measurement)
-        latest_measurements[measurement.measurement_name] = measurement;
-    else if(measurement.measurement_name == velocity_measurement)
-    {
-        // handle velocity measurement
-        ukf->update(measurement.mu, boost::bind(velocityMeasurementModel<State>, _1),
-                        boost::bind(ukfom::id< Eigen::MatrixXd >, measurement.cov),
-                        allowed_distance);
-    }
-    else
-        LOG_ERROR_S << "Measurement " << measurement.measurement_name << " is not supported by the Orientation filter.";
 }
 
 void OrientationUKF::updateFilterParamter()
@@ -127,30 +79,43 @@ void OrientationUKF::updateFilterParamter()
     gravity[2] = GWGS0*((1+GWGS1*pow(sin(config.latitude),2))/sqrt(1-pow(ECC,2)*pow(sin(config.latitude),2)));
 }
 
-void OrientationUKF::muToUKFState(const FilterState::Mu& mu, WState& state) const
+void OrientationUKF::integrateMeasurement(const RotationRate& measurement)
 {
-    assert(mu.rows() >= WState::DOF);
-
-    base::Orientation orientation;
-    Eigen::Vector3d euler = mu.block(0, 0, 3, 1);
-    EulerConversion::eulerToQuad(euler, orientation);
-    state.orientation = MTK::SO3<double>(orientation);
-    state.velocity = mu.block(3, 0, 3, 1);
-    state.bias_gyro = mu.block(6, 0, 3, 1);
-    state.bias_acc = mu.block(9, 0, 3, 1);
+    rotation_rate = measurement;
 }
 
-void OrientationUKF::UKFStateToMu(const WState& state, FilterState::Mu& mu) const
+void OrientationUKF::integrateMeasurement(const Acceleration& measurement)
 {
-    mu.resize(WState::DOF);
-    mu.setZero();
+    acceleration = measurement;
+}
 
-    Eigen::Vector3d euler;
-    EulerConversion::quadToEuler(state.orientation, euler);
-    mu.block(0, 0, 3, 1) = euler;
-    mu.block(3, 0, 3, 1) = state.velocity;
-    mu.block(6, 0, 3, 1) = state.bias_gyro;
-    mu.block(9, 0, 3, 1) = state.bias_acc;        
+void OrientationUKF::integrateMeasurement(const VelocityMeasurement& measurement)
+{
+    // handle velocity measurement
+    ukf->update(measurement.mu, boost::bind(velocityMeasurementModel<State>, _1),
+                    boost::bind(ukfom::id< VelocityMeasurement::Cov >, measurement.cov),
+                    ukfom::accept_any_mahalanobis_distance<WState::scalar>);
+}
+
+void OrientationUKF::predictionStepImpl(double delta)
+{
+    if(!acceleration.mu.allFinite())
+    {
+        LOG_ERROR_S << "No acceleration measurement available! Skipping prediction step.";
+        return;
+    }
+
+    if(!rotation_rate.mu.allFinite())
+    {
+        LOG_ERROR_S << "No angular velocity measurement available! Skipping prediction step.";
+        return;
+    }
+
+    Covariance process_noise = process_noise_cov * delta; // might be pow(delta,2), depending on sensor spec.
+
+    //process_noise.block(6,6,3,3) = 2.0 * it1->second.cov;
+    // need to do uncertainty matrix calculations
+    ukf->predict(boost::bind(processModel<WState>, _1, acceleration.mu, rotation_rate.mu, delta, config, earth_rotation, gravity), process_noise);
 }
 
 }
