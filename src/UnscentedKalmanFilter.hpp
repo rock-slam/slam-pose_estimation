@@ -2,6 +2,7 @@
 #define _POSE_ESTIMATION_UKF_HPP
 
 #include <iostream>
+#include <stdexcept>
 #include <ukfom/ukf.hpp>
 #include <ukfom/mtkwrap.hpp>
 #include <boost/shared_ptr.hpp>
