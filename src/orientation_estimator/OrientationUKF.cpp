@@ -1,6 +1,6 @@
 #include "OrientationUKF.hpp"
 #include <base/Float.hpp>
-#include <base/Logging.hpp>
+#include <base-logging/Logging.hpp>
 
 /** WGS-84 ellipsoid constants (Nominal Gravity Model and Earth angular velocity) **/
 static const double EQUATORIAL_RADIUS = 6378137.0; /** Equatorial radius in meters **/
