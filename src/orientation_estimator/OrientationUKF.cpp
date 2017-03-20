@@ -16,15 +16,15 @@ processModel (const OrientationState &state, const Eigen::Vector3d& acc, const E
               const Eigen::Vector3d& gravity, double delta_time)
 {
     OrientationState new_state(state);
-    Eigen::Vector3d angular_velocity = omega - new_state.bias_gyro - new_state.orientation.inverse()*earth_rotation;
+    Eigen::Vector3d angular_velocity = new_state.orientation * (omega - new_state.bias_gyro) - earth_rotation;
     new_state.orientation.boxplus(angular_velocity, delta_time);
     
-    Eigen::Vector3d velocity = new_state.orientation*(acc - new_state.bias_acc) - gravity;
-    new_state.velocity.boxplus(velocity, delta_time);
+    Eigen::Vector3d acceleration = new_state.orientation * (acc - new_state.bias_acc) - gravity;
+    new_state.velocity.boxplus(acceleration, delta_time);
     
     Eigen::Vector3d gyro_bias_delta = (-1.0/gyro_bias_tau) * new_state.bias_gyro;
     new_state.bias_gyro.boxplus(gyro_bias_delta, delta_time);
-    
+
     Eigen::Vector3d acc_bias_delta = (-1.0/acc_bias_tau) * new_state.bias_acc;
     new_state.bias_acc.boxplus(acc_bias_delta, delta_time);
     
