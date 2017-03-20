@@ -72,9 +72,9 @@ void OrientationUKF::integrateMeasurement(const VelocityMeasurement& measurement
                     ukfom::accept_any_mahalanobis_distance<WState::scalar>);
 }
 
-const OrientationUKF::RotationRate::Mu& OrientationUKF::getRotationRate()
+OrientationUKF::RotationRate::Mu OrientationUKF::getRotationRate()
 {
-    return rotation_rate.mu - ukf->mu().bias_gyro;
+    return rotation_rate.mu - ukf->mu().bias_gyro - ukf->mu().orientation.inverse()*earth_rotation;
 }
 
 void OrientationUKF::predictionStepImpl(double delta)

@@ -26,7 +26,7 @@ public:
     void integrateMeasurement(const Acceleration& measurement);
     void integrateMeasurement(const VelocityMeasurement& measurement);
 
-    const RotationRate::Mu& getRotationRate();
+    RotationRate::Mu getRotationRate();
     
 protected:
     void predictionStepImpl(double delta);
