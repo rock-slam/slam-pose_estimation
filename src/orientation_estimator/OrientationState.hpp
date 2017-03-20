@@ -17,8 +17,8 @@ typedef ukfom::mtkwrap<RotationType::vect_type> VelocityType;
 typedef ukfom::mtkwrap<RotationType::vect_type> BiasType;
 
 MTK_BUILD_MANIFOLD(OrientationState,
-   ((RotationType, orientation))
-   ((VelocityType, velocity)) // navigation/target frame velocity
+   ((RotationType, orientation)) // orientation in navigation/target frame
+   ((VelocityType, velocity)) // velocity in navigation/target frame
    ((BiasType, bias_gyro))
    ((BiasType, bias_acc))
 )

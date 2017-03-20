@@ -18,27 +18,26 @@ public:
     MEASUREMENT(VelocityMeasurement, 3)
 
 public:
-    OrientationUKF(const State& initial_state, const Covariance& state_cov, const OrientationUKFConfig& config);
+    OrientationUKF(const State& initial_state, const Covariance& state_cov,
+                   double gyro_bias_tau, double acc_bias_tau, const LocationConfiguration& location);
     virtual ~OrientationUKF() {}
-    
-    void setFilterConfiguration(const OrientationUKFConfig& config);
 
     void integrateMeasurement(const RotationRate& measurement);
     void integrateMeasurement(const Acceleration& measurement);
     void integrateMeasurement(const VelocityMeasurement& measurement);
+
+    const RotationRate::Mu& getRotationRate();
     
 protected:
     void predictionStepImpl(double delta);
 
-    /* This needs to called after the filter configuration was updated */
-    void updateFilterParamter();
-
 protected:
-    OrientationUKFConfig config;
     RotationRate rotation_rate;
     Acceleration acceleration;
     Eigen::Vector3d earth_rotation;
     Eigen::Vector3d gravity;
+    double gyro_bias_tau;
+    double acc_bias_tau;
 };
 
 }
