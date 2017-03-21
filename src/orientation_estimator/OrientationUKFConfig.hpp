@@ -41,9 +41,6 @@ struct OrientationUKFConfig
     /** Inerial noise parameters for acceleration */
     InertialNoiseParameters rotation_rate;
 
-    /** Velocity process noise, diagonal of the covariance matrix */
-    base::Vector3d velocity_diag;
-
     /* Latitude and Longitude of operational area */
     LocationConfiguration location;
 };

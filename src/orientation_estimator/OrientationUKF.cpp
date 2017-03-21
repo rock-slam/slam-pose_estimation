@@ -74,14 +74,20 @@ void OrientationUKF::integrateMeasurement(const VelocityMeasurement& measurement
 
 OrientationUKF::RotationRate::Mu OrientationUKF::getRotationRate()
 {
-    return rotation_rate.mu - ukf->mu().bias_gyro - ukf->mu().orientation.inverse()*earth_rotation;
+    return rotation_rate.mu - ukf->mu().bias_gyro - ukf->mu().orientation.inverse() * earth_rotation;
 }
 
 void OrientationUKF::predictionStepImpl(double delta)
 {
-    Covariance process_noise = process_noise_cov * delta; // might be pow(delta,2), depending on sensor spec.
+    Eigen::Matrix3d rot = ukf->mu().orientation.matrix();
+    Covariance process_noise = Covariance::Zero();
+    // uncertainty matrix calculations
+    process_noise.block(0,0,3,3) = rot * process_noise_cov.block(0,0,3,3) * rot.transpose();
+    process_noise.block(3,3,3,3) = rot * process_noise_cov.block(3,3,3,3) * rot.transpose();
+    process_noise.block(6,6,3,3) = process_noise_cov.block(6,6,3,3);
+    process_noise.block(9,9,3,3) = process_noise_cov.block(9,9,3,3);
+    process_noise = pow(delta, 2.) * process_noise;
 
-    // need to do uncertainty matrix calculations
     ukf->predict(boost::bind(processModel<WState>, _1, acceleration.mu, rotation_rate.mu, gyro_bias_tau, acc_bias_tau, earth_rotation, gravity, delta), process_noise);
 }
 

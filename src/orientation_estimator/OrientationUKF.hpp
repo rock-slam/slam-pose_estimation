@@ -26,6 +26,7 @@ public:
     void integrateMeasurement(const Acceleration& measurement);
     void integrateMeasurement(const VelocityMeasurement& measurement);
 
+    /* Returns unbiased rotation rate in IMU frame */
     RotationRate::Mu getRotationRate();
     
 protected:
