@@ -36,7 +36,6 @@ protected:
     RotationRate rotation_rate;
     Acceleration acceleration;
     Eigen::Vector3d earth_rotation;
-    Eigen::Vector3d gravity;
     double gyro_bias_tau;
     double acc_bias_tau;
 };

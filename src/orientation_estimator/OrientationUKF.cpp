@@ -13,13 +13,13 @@ template <typename OrientationState>
 OrientationState
 processModel (const OrientationState &state, const Eigen::Vector3d& acc, const Eigen::Vector3d& omega,
               double gyro_bias_tau, double acc_bias_tau, const Eigen::Vector3d& earth_rotation,
-              const Eigen::Vector3d& gravity, double delta_time)
+              double delta_time)
 {
     OrientationState new_state(state);
     Eigen::Vector3d angular_velocity = new_state.orientation * (omega - new_state.bias_gyro) - earth_rotation;
     new_state.orientation.boxplus(angular_velocity, delta_time);
     
-    Eigen::Vector3d acceleration = new_state.orientation * (acc - new_state.bias_acc) - gravity;
+    Eigen::Vector3d acceleration = new_state.orientation * (acc - new_state.bias_acc) - Eigen::Vector3d(0., 0., new_state.gravity(0));
     new_state.velocity.boxplus(acceleration, delta_time);
     
     Eigen::Vector3d gyro_bias_delta = (-1.0/gyro_bias_tau) * new_state.bias_gyro;
@@ -45,10 +45,9 @@ OrientationUKF::OrientationUKF(const State& initial_state, const Covariance& sta
     initializeFilter(initial_state, state_cov);
 
     earth_rotation = Eigen::Vector3d(EARTHW * cos(location.latitude), 0., EARTHW * sin(location.latitude));
-    gravity = Eigen::Vector3d(0., 0., GravityModel(location.latitude, location.altitude));
 
     rotation_rate.mu = RotationRate::Mu::Zero();
-    acceleration.mu = gravity;
+    acceleration.mu = Acceleration::Mu(0., 0., initial_state.gravity(0));
 }
 
 void OrientationUKF::integrateMeasurement(const RotationRate& measurement)
@@ -88,7 +87,7 @@ void OrientationUKF::predictionStepImpl(double delta)
     process_noise.block(9,9,3,3) = process_noise_cov.block(9,9,3,3);
     process_noise = pow(delta, 2.) * process_noise;
 
-    ukf->predict(boost::bind(processModel<WState>, _1, acceleration.mu, rotation_rate.mu, gyro_bias_tau, acc_bias_tau, earth_rotation, gravity, delta), process_noise);
+    ukf->predict(boost::bind(processModel<WState>, _1, acceleration.mu, rotation_rate.mu, gyro_bias_tau, acc_bias_tau, earth_rotation, delta), process_noise);
 }
 
 }
