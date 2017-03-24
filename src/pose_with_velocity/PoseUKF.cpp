@@ -78,7 +78,7 @@ processModel (const PoseWithVelocityType &state, double delta_time)
 {
     PoseWithVelocityType new_state(state);
     new_state.position.boxplus(new_state.orientation * new_state.velocity, delta_time);
-    new_state.orientation.boxplus(new_state.angular_velocity, delta_time);
+    new_state.orientation.boxplus(new_state.orientation * new_state.angular_velocity, delta_time);
     return new_state;
 }
 
@@ -92,7 +92,7 @@ processModelWithAcceleration (const PoseWithVelocityType &state, const Eigen::Ve
     PoseWithVelocityType new_state(state);
     new_state.velocity.boxplus(acc, delta_time);
     new_state.position.boxplus(new_state.orientation * new_state.velocity, delta_time);
-    new_state.orientation.boxplus(new_state.angular_velocity, delta_time);
+    new_state.orientation.boxplus(new_state.orientation * new_state.angular_velocity, delta_time);
     return new_state;
 }
 
