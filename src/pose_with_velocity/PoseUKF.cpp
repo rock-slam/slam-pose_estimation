@@ -179,14 +179,20 @@ void PoseUKF::integrateMeasurement(const AccelerationMeasurement& measurement)
 
 void PoseUKF::predictionStepImpl(const double delta)
 {
+    Eigen::Matrix3d rot = ukf->mu().orientation.matrix();
+    MTK_UKF::cov process_noise = process_noise_cov;
+    MTK::subblock(process_noise, &State::position) = rot * MTK::subblock(process_noise_cov, &State::position) * rot.transpose();
+    MTK::subblock(process_noise, &State::orientation) = rot * MTK::subblock(process_noise_cov, &State::orientation) * rot.transpose();
+    process_noise = delta * process_noise;
+
     if(acceleration.mu.allFinite())
     {
         MTK_UKF::cov process_noise = process_noise_cov;
         process_noise.block(6,6,3,3) = 2.0 * acceleration.cov;
-        ukf->predict(boost::bind(processModelWithAcceleration<WState>, _1, acceleration.mu, delta), MTK_UKF::cov(delta * process_noise));
+        ukf->predict(boost::bind(processModelWithAcceleration<WState>, _1, acceleration.mu, delta), process_noise);
     }
     else
-        ukf->predict(boost::bind(processModel<WState>, _1 , delta), MTK_UKF::cov(delta * process_noise_cov));
+        ukf->predict(boost::bind(processModel<WState>, _1 , delta), process_noise);
 }
 
 }
