@@ -81,12 +81,10 @@ OrientationUKF::RotationRate::Mu OrientationUKF::getRotationRate()
 void OrientationUKF::predictionStepImpl(double delta)
 {
     Eigen::Matrix3d rot = ukf->mu().orientation.matrix();
-    Covariance process_noise = Covariance::Zero();
+    Covariance process_noise = process_noise_cov;
     // uncertainty matrix calculations
-    process_noise.block(0,0,3,3) = rot * process_noise_cov.block(0,0,3,3) * rot.transpose();
-    process_noise.block(3,3,3,3) = rot * process_noise_cov.block(3,3,3,3) * rot.transpose();
-    process_noise.block(6,6,3,3) = process_noise_cov.block(6,6,3,3);
-    process_noise.block(9,9,3,3) = process_noise_cov.block(9,9,3,3);
+    MTK::subblock(process_noise, &State::orientation) = rot * MTK::subblock(process_noise_cov, &State::orientation) * rot.transpose();
+    MTK::subblock(process_noise, &State::velocity) = rot * MTK::subblock(process_noise_cov, &State::velocity) * rot.transpose();
     process_noise = pow(delta, 2.) * process_noise;
 
     ukf->predict(boost::bind(processModel<WState>, _1, acceleration.mu, rotation_rate.mu, gyro_bias_tau, acc_bias_tau, delta), process_noise);
