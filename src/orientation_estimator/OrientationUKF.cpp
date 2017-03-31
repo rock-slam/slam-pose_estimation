@@ -1,7 +1,7 @@
 #include "OrientationUKF.hpp"
 #include <base/Float.hpp>
 #include <base-logging/Logging.hpp>
-#include "../GravityModel.hpp"
+#include "../GravitationalModel.hpp"
 
 
 namespace pose_estimation

@@ -2,7 +2,7 @@ set (POSE_ESTIMATION_HEADERS
     Measurement.hpp
     UnscentedKalmanFilter.hpp
     StreamAlignmentVerifier.hpp
-    GravityModel.hpp
+    GravitationalModel.hpp
     pose_with_velocity/PoseWithVelocity.hpp
     pose_with_velocity/PoseUKF.hpp
     pose_with_velocity/BodyStateMeasurement.hpp
