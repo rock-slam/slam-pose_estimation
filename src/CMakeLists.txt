@@ -3,6 +3,7 @@ set (POSE_ESTIMATION_HEADERS
     UnscentedKalmanFilter.hpp
     StreamAlignmentVerifier.hpp
     GravitationalModel.hpp
+    GeographicProjection.hpp
     pose_with_velocity/PoseWithVelocity.hpp
     pose_with_velocity/PoseUKF.hpp
     pose_with_velocity/BodyStateMeasurement.hpp
@@ -13,6 +14,7 @@ set (POSE_ESTIMATION_HEADERS
     
 set (POSE_ESTIMATION_SOURCES
     StreamAlignmentVerifier.cpp
+    GeographicProjection.cpp
     pose_with_velocity/PoseUKF.cpp
     orientation_estimator/OrientationUKF.cpp
     )
@@ -21,5 +23,5 @@ rock_library(pose_estimation
     SOURCES ${POSE_ESTIMATION_SOURCES}
     HEADERS ${POSE_ESTIMATION_HEADERS}
     DEPS_PKGCONFIG eigen3 base-types base-lib mtk aggregator
-    DEPS_CMAKE LAPACK)
+    DEPS_CMAKE LAPACK GDAL)
     
