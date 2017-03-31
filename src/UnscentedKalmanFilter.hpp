@@ -7,12 +7,13 @@
 #include <ukfom/mtkwrap.hpp>
 #include <boost/shared_ptr.hpp>
 #include <base/Time.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace pose_estimation
 {
 
 template<typename Manifold>
-class UnscentedKalmanFilter
+class UnscentedKalmanFilter : private boost::noncopyable
 {
 public:
     enum {
