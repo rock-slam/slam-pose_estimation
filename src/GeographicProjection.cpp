@@ -9,10 +9,12 @@ GeographicProjection::GeographicProjection(double latitude, double longitude, do
     OGRSpatialReference navigation; // transverse mercator plane
 
     world.SetWellKnownGeogCS( "WGS84" );
+    world.SetAngularUnits(SRS_UA_RADIAN, 1.0);
 
     navigation.SetProjCS( "local transverse mercator" );
     navigation.SetWellKnownGeogCS( "WGS84" );
     navigation.SetTM(latitude, longitude, 0.9996, 0., 0.);
+    navigation.SetAngularUnits(SRS_UA_RADIAN, 1.0);
 
     world2nav = OGRCreateCoordinateTransformation(&world, &navigation);
     nav2world = OGRCreateCoordinateTransformation(&navigation, &world);
