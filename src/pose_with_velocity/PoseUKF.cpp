@@ -34,9 +34,11 @@ measurementOrientation(const PoseWithVelocityType &state)
 
 template <typename PoseWithVelocityType>
 VelocityType
-measurementVelocity(const PoseWithVelocityType &state)
+measurementVelocity(const PoseWithVelocityType &state, bool velocity_bias)
 {
-    return state.velocity + state.velocity_bias;
+    if(velocity_bias)
+    	return state.velocity + state.velocity_bias;
+    return state.velocity;
 }
 
 template <typename PoseWithVelocityType>
@@ -147,9 +149,9 @@ void PoseUKF::integrateMeasurement(const OrientationMeasurement& measurement)
                 ukfom::accept_any_mahalanobis_distance<WState::scalar>);
 }
 
-void PoseUKF::integrateMeasurement(const VelocityMeasurement& measurement)
+void PoseUKF::integrateMeasurement(const VelocityMeasurement& measurement, bool velocity_bias)
 {
-    ukf->update(measurement.mu, boost::bind(measurementVelocity<WState>, _1),
+    ukf->update(measurement.mu, boost::bind(measurementVelocity<WState>, _1, velocity_bias),
                 boost::bind(ukfom::id< VelocityMeasurement::Cov >, measurement.cov),
                 ukfom::accept_any_mahalanobis_distance<WState::scalar>);
 }

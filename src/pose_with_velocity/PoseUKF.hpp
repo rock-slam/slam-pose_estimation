@@ -31,7 +31,7 @@ public:
     void integrateMeasurement(const XYMeasurement& measurement);
     void integrateMeasurement(const ZMeasurement& measurement);
     void integrateMeasurement(const OrientationMeasurement& measurement);
-    void integrateMeasurement(const VelocityMeasurement& measurement);
+    void integrateMeasurement(const VelocityMeasurement& measurement, bool velocity_bias = true);
     void integrateMeasurement(const XYVelocityMeasurement& measurement);
     void integrateMeasurement(const ZVelocityMeasurement& measurement);
     void integrateMeasurement(const XVelYawVelMeasurement& measurement);
