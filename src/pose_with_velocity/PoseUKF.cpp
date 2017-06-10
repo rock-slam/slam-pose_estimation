@@ -36,21 +36,21 @@ template <typename PoseWithVelocityType>
 VelocityType
 measurementVelocity(const PoseWithVelocityType &state)
 {
-    return state.velocity;
+    return state.velocity + state.velocity_bias;
 }
 
 template <typename PoseWithVelocityType>
 Eigen::Matrix<VelocityType::scalar, 2, 1>
 measurementXYVelocity(const PoseWithVelocityType &state)
 {
-    return state.velocity.block(0,0,2,1);
+    return state.velocity.block(0,0,2,1) + state.velocity_bias.block(0,0,2,1);
 }
 
 template <typename PoseWithVelocityType>
 Eigen::Matrix<VelocityType::scalar, 1, 1>
 measurementZVelocity(const PoseWithVelocityType &state)
 {
-    return state.velocity.block(2,0,1,1);
+    return state.velocity.block(2,0,1,1) + state.velocity_bias.block(2,0,1,1);
 }
 
 template <typename PoseWithVelocityType>
@@ -74,11 +74,16 @@ measurementAngularVelocity(const PoseWithVelocityType &state)
  */
 template <typename PoseWithVelocityType>
 PoseWithVelocityType
-processModel (const PoseWithVelocityType &state, double delta_time)
+processModel (const PoseWithVelocityType &state, double velocity_bias_tau, double delta_time)
 {
     PoseWithVelocityType new_state(state);
     new_state.position.boxplus(new_state.orientation * new_state.velocity, delta_time);
     new_state.orientation.boxplus(new_state.orientation * new_state.angular_velocity, delta_time);
+
+    // first order markov process limits of velocity bias
+    Eigen::Vector3d velocity_bias_delta = (-1.0/velocity_bias_tau) * state.velocity_bias;
+    new_state.velocity_bias.boxplus(velocity_bias_delta, delta_time);
+
     return new_state;
 }
 
@@ -87,16 +92,21 @@ processModel (const PoseWithVelocityType &state, double delta_time)
  */
 template <typename PoseWithVelocityType>
 PoseWithVelocityType
-processModelWithAcceleration (const PoseWithVelocityType &state, const Eigen::Vector3d& acc, double delta_time)
+processModelWithAcceleration (const PoseWithVelocityType &state, const Eigen::Vector3d& acc, double velocity_bias_tau, double delta_time)
 {
     PoseWithVelocityType new_state(state);
     new_state.velocity.boxplus(acc, delta_time);
     new_state.position.boxplus(new_state.orientation * new_state.velocity, delta_time);
     new_state.orientation.boxplus(new_state.orientation * new_state.angular_velocity, delta_time);
+
+    // first order markov process limits of velocity bias
+    Eigen::Vector3d velocity_bias_delta = (-1.0/velocity_bias_tau) * state.velocity_bias;
+    new_state.velocity_bias.boxplus(velocity_bias_delta, delta_time);
+
     return new_state;
 }
 
-PoseUKF::PoseUKF(const State& initial_state, const Covariance& state_cov) : UnscentedKalmanFilter<pose_estimation::PoseWithVelocity>()
+PoseUKF::PoseUKF(const State& initial_state, const Covariance& state_cov, const VelocityBiasConfig& bias_config) : UnscentedKalmanFilter<pose_estimation::PoseWithVelocity>(), velocity_bias_config(bias_config)
 {
     initializeFilter(initial_state, state_cov);
 
@@ -183,16 +193,19 @@ void PoseUKF::predictionStepImpl(const double delta)
     MTK_UKF::cov process_noise = process_noise_cov;
     MTK::subblock(process_noise, &State::position) = rot * MTK::subblock(process_noise_cov, &State::position) * rot.transpose();
     MTK::subblock(process_noise, &State::orientation) = rot * MTK::subblock(process_noise_cov, &State::orientation) * rot.transpose();
+    MTK::subblock(process_noise, &State::velocity_bias) = (2. / (velocity_bias_config.tau * delta)) *
+                                    MTK::subblock(process_noise_cov, &State::velocity_bias) +
+                                    Eigen::Matrix3d::Identity() * velocity_bias_config.scale * std::pow(ukf->mu().velocity[2], 2.0) * delta;
     process_noise = delta * process_noise;
 
     if(acceleration.mu.allFinite())
     {
         MTK_UKF::cov process_noise = process_noise_cov;
         process_noise.block(6,6,3,3) = 2.0 * acceleration.cov;
-        ukf->predict(boost::bind(processModelWithAcceleration<WState>, _1, acceleration.mu, delta), process_noise);
+        ukf->predict(boost::bind(processModelWithAcceleration<WState>, _1, acceleration.mu, velocity_bias_config.tau, delta), process_noise);
     }
     else
-        ukf->predict(boost::bind(processModel<WState>, _1 , delta), process_noise);
+        ukf->predict(boost::bind(processModel<WState>, _1 , velocity_bias_config.tau, delta), process_noise);
 }
 
 }

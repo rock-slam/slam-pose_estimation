@@ -14,12 +14,14 @@ namespace pose_estimation
 typedef ukfom::mtkwrap< MTK::SO3<double> > RotationType;
 typedef ukfom::mtkwrap<RotationType::vect_type> TranslationType;
 typedef ukfom::mtkwrap<RotationType::vect_type> VelocityType;
+typedef ukfom::mtkwrap< MTK::vect<3, double> > VelocityBiasType;
 
 MTK_BUILD_MANIFOLD(PoseWithVelocity,
    ((TranslationType, position))
    ((RotationType, orientation))
    ((VelocityType, velocity))
    ((VelocityType, angular_velocity))
+   ((VelocityBiasType, velocity_bias))
 )
 
 typedef Eigen::Matrix<PoseWithVelocity::scalar, PoseWithVelocity::DOF, PoseWithVelocity::DOF> PoseWithVelocityCovariance;

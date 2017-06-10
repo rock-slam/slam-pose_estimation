@@ -4,6 +4,7 @@ set (POSE_ESTIMATION_HEADERS
     StreamAlignmentVerifier.hpp
     pose_with_velocity/PoseWithVelocity.hpp
     pose_with_velocity/PoseUKF.hpp
+    pose_with_velocity/PoseUKFConfig.hpp
     pose_with_velocity/BodyStateMeasurement.hpp
     )
     

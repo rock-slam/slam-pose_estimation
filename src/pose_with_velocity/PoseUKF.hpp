@@ -2,6 +2,7 @@
 #define _POSE_ESTIMATION_POSE_UKF_HPP
 
 #include "PoseWithVelocity.hpp"
+#include "PoseUKFConfig.hpp"
 #include <pose_estimation/Measurement.hpp>
 #include <pose_estimation/UnscentedKalmanFilter.hpp>
 
@@ -23,7 +24,7 @@ public:
     MEASUREMENT(AccelerationMeasurement, 3)
 
 public:
-    PoseUKF(const State& initial_state, const Covariance& state_cov);
+    PoseUKF(const State& initial_state, const Covariance& state_cov, const VelocityBiasConfig& bias_config);
     virtual ~PoseUKF() {}
 
     void integrateMeasurement(const PositionMeasurement& measurement);
@@ -42,6 +43,7 @@ protected:
 
 protected:
     AccelerationMeasurement acceleration;
+    VelocityBiasConfig velocity_bias_config;
 };
 
 }
