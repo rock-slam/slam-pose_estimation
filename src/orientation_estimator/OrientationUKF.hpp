@@ -19,7 +19,7 @@ public:
 
 public:
     OrientationUKF(const State& initial_state, const Covariance& state_cov,
-                   double gyro_bias_tau, double acc_bias_tau);
+                   double gyro_bias_tau, double acc_bias_tau, const LocationConfiguration& location);
     virtual ~OrientationUKF() {}
 
     void integrateMeasurement(const RotationRate& measurement);
@@ -35,6 +35,7 @@ protected:
 protected:
     RotationRate rotation_rate;
     Acceleration acceleration;
+    Eigen::Vector3d earth_rotation;
     double gyro_bias_tau;
     double acc_bias_tau;
 };

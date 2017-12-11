@@ -16,7 +16,6 @@ typedef ukfom::mtkwrap< MTK::SO3<double> > RotationType;
 typedef ukfom::mtkwrap<RotationType::vect_type> VelocityType;
 typedef ukfom::mtkwrap<RotationType::vect_type> BiasType;
 typedef ukfom::mtkwrap< MTK::vect<1> > GravityType;
-typedef ukfom::mtkwrap< MTK::vect<1> > LatitudeType;
 
 MTK_BUILD_MANIFOLD(OrientationState,
    ((RotationType, orientation)) // orientation of IMU in navigation/target frame
@@ -24,7 +23,6 @@ MTK_BUILD_MANIFOLD(OrientationState,
    ((BiasType, bias_gyro))
    ((BiasType, bias_acc))
    ((GravityType, gravity))
-   ((LatitudeType, latitude))
 )
 
 }
