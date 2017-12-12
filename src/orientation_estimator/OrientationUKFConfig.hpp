@@ -43,6 +43,9 @@ struct OrientationUKFConfig
 
     /* Latitude and Longitude of operational area */
     LocationConfiguration location;
+
+    /* Max velocity in m/s */
+    base::Vector3d max_velocity;
 };
 
 }
