@@ -10,6 +10,13 @@
 namespace pose_estimation
 {
 
+/**
+ * This filter estimates the orientation of an IMU in the NWU navigation frame.
+ * It integrates rotation rates, accelerations and linear velocities.
+ * The linear velocities help to constrain the acceleration and to estimate the biases.
+ * Given gyroscopes capable of sensing the rotation of the earth (e.g. a fibre optic gyro)
+ * this filter is able to estimate it's true heading.
+ */
 class OrientationUKF : public UnscentedKalmanFilter<OrientationState>
 {
 public:
@@ -22,8 +29,19 @@ public:
                    double gyro_bias_tau, double acc_bias_tau, const LocationConfiguration& location);
     virtual ~OrientationUKF() {}
 
+    /**
+     * Sets the current rotation rate of the IMU in rad/s.
+     */
     void integrateMeasurement(const RotationRate& measurement);
+
+    /**
+     * Sets the current acceleration of the IMU in m/s^2.
+     */
     void integrateMeasurement(const Acceleration& measurement);
+
+    /**
+     * Integrate the linear velocitiy of the IMU in m/s.
+     */
     void integrateMeasurement(const VelocityMeasurement& measurement);
 
     /* Returns unbiased rotation rate in IMU frame */
