@@ -4,7 +4,7 @@
   </description>
   <maintainer>Sascha Arnold/sascha.arnold@dfki.de</maintainer>
   <author>Sascha Arnold/sascha.arnold@dfki.de</author>
-  <license></license>
+  <license>BSD 3-Clause</license>
   <url>http://</url>
   <logo>http://</logo>
 
@@ -14,5 +14,11 @@
   <depend package="drivers/aggregator" />
   <depend package="gdal" />
   
-  <tags>needs_opt</tags>
+  <tags>stable</tags>
+
+  <keywords>
+    <keyword>Localization</keyword>
+  </keywords>
+  <stage>0</stage>
+  <activity>active</activity>
 </package>
