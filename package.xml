@@ -1,0 +1,28 @@
+<package format="2">
+  <name>pose_estimation</name>
+  <version>1.0.0</version>
+  <description>Filter based non-linear robot pose estimation using an arbitrary number of state measurements.</description>
+
+  <maintainer email="sascha.arnold@dfki.de">Sascha Arnold</maintainer>
+  <author     email="sascha.arnold@dfki.de">Sascha Arnold</author>
+
+  <license>BSD 3-Clause</license>
+
+  <buildtool_depend>cmake</buildtool_depend>
+
+  <build_depend>rock-cmake</build_depend>
+  <build_depend>pkg-config</build_depend>
+
+  <depend>boost</depend>
+  <depend>rock-types</depend>
+  <depend>mtk</depend>
+  <depend>rock-aggregator</depend>
+  <depend>gdal</depend>
+
+  <doc_depend>doxygen</doc_depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
+
