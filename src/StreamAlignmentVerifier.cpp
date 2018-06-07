@@ -1,5 +1,5 @@
 #include "StreamAlignmentVerifier.hpp"
-#include <base/Logging.hpp>
+#include <base-logging/Logging.hpp>
 
 using namespace pose_estimation;
 
