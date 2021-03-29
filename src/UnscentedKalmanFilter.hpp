@@ -6,7 +6,6 @@
 #include <ukfom/ukf.hpp>
 #include <ukfom/mtkwrap.hpp>
 #include <boost/shared_ptr.hpp>
-#include <base/Time.hpp>
 #include <boost/noncopyable.hpp>
 
 namespace pose_estimation
@@ -27,7 +26,7 @@ public:
     UnscentedKalmanFilter()
     {
         process_noise_cov = Covariance::Zero();
-        last_measurement_time.microseconds = 0;
+        last_measurement_time_usec = 0;
         min_time_delta = 1.0e-9;
         max_time_delta = std::numeric_limits<double>::max();
     }
@@ -40,7 +39,7 @@ public:
     void initializeFilter(const State& initial_state, const Covariance& state_cov)
     {
         ukf.reset(new MTK_UKF(initial_state, state_cov));
-        last_measurement_time.microseconds = 0;
+        last_measurement_time_usec = 0;
     }
 
     /**
@@ -73,28 +72,35 @@ public:
         }
         return false;
     }
+    
+    template<class Time>
+    void predictionStepFromSampleTime(const Time& sample_time)
+    {
+        predictionStepFromSampleTime(sample_time.microseconds);
+    }
 
     /**
      * Computes the time delta from a given sample timestamp and
      * calls predictionStep(delta_t)
      *
+     * @param sample_time in microseconds
      * @throws runtime_error if delta_t is negative or greater then the allowed maximum.
      */
-    void predictionStepFromSampleTime(const base::Time& sample_time)
+    void predictionStepFromSampleTime(int64_t sample_time)
     {
         // first call
-        if(last_measurement_time.isNull())
+        if(!last_measurement_time_usec)
         {
-            last_measurement_time = sample_time;
+            last_measurement_time_usec = sample_time;
             return;
         }
 
         // compute delta t
-        double delta_t = (sample_time - last_measurement_time).toSeconds();
+        double delta_t = static_cast<double>(sample_time - last_measurement_time_usec) / 1000000.0;
 
         // set new last measurement time
         if(delta_t > min_time_delta)
-            last_measurement_time = sample_time;
+            last_measurement_time_usec = sample_time;
 
         predictionStep(delta_t);
     }
@@ -128,9 +134,9 @@ public:
     bool isInitialized() const {return ukf.get() != NULL;}
     const Covariance& getProcessNoiseCovariance() const {return process_noise_cov;}
     void setProcessNoiseCovariance(const Covariance& noise_cov) {process_noise_cov = noise_cov;}
-    const base::Time& getLastMeasurementTime() const {return last_measurement_time;}
-    void setLastMeasurementTime(const base::Time& last_measurement_time)
-                               {this->last_measurement_time = last_measurement_time;}
+    int64_t getLastMeasurementTime() const {return last_measurement_time_usec;}
+    void setLastMeasurementTime(int64_t last_measurement_time)
+                               {this->last_measurement_time_usec = last_measurement_time;}
     double getMaxTimeDelta() const {return max_time_delta;}
     void setMaxTimeDelta(double max_time_delta) {this->max_time_delta = max_time_delta;}
     double getMinTimeDelta() const {return min_time_delta;}
@@ -149,7 +155,7 @@ protected:
 protected:
     boost::shared_ptr<MTK_UKF> ukf;
     Covariance process_noise_cov;
-    base::Time last_measurement_time;
+    int64_t last_measurement_time_usec;
     double max_time_delta;
     double min_time_delta;
 };
