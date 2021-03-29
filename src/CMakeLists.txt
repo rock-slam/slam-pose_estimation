@@ -13,7 +13,6 @@ set (POSE_ESTIMATION_HEADERS
     )
     
 set (POSE_ESTIMATION_SOURCES
-    StreamAlignmentVerifier.cpp
     GeographicProjection.cpp
     pose_with_velocity/PoseUKF.cpp
     orientation_estimator/OrientationUKF.cpp
@@ -22,6 +21,6 @@ set (POSE_ESTIMATION_SOURCES
 rock_library(pose_estimation
     SOURCES ${POSE_ESTIMATION_SOURCES}
     HEADERS ${POSE_ESTIMATION_HEADERS}
-    DEPS_PKGCONFIG eigen3 base-types base-lib mtk aggregator
+    DEPS_PKGCONFIG eigen3 base-types base-lib mtk
     DEPS_CMAKE LAPACK GDAL)
     

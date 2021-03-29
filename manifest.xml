@@ -11,7 +11,6 @@
   <depend package="base/cmake" />
   <depend package="base/types" />
   <depend package="slam/mtk" />
-  <depend package="drivers/aggregator" />
   <depend package="gdal" />
   
   <tags>stable</tags>
