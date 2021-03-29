@@ -21,6 +21,5 @@ set (POSE_ESTIMATION_SOURCES
 rock_library(pose_estimation
     SOURCES ${POSE_ESTIMATION_SOURCES}
     HEADERS ${POSE_ESTIMATION_HEADERS}
-    DEPS_PKGCONFIG eigen3 base-types base-lib mtk
+    DEPS_PKGCONFIG eigen3 base-lib mtk
     DEPS_CMAKE LAPACK GDAL)
-    

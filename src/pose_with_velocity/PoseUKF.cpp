@@ -1,5 +1,5 @@
 #include "PoseUKF.hpp"
-#include <base/Float.hpp>
+#include <limits>
 
 namespace pose_estimation
 {
@@ -106,7 +106,7 @@ PoseUKF::PoseUKF(const State& initial_state, const Covariance& state_cov) : Unsc
     MTK::setDiagonal(process_noise_cov, &WState::velocity, 0.00001);
     MTK::setDiagonal(process_noise_cov, &WState::angular_velocity, 0.00001);
 
-    acceleration.mu = base::NaN<double>() * AccelerationMeasurement::Mu::Ones();
+    acceleration.mu = std::numeric_limits<double>::quiet_NaN() * AccelerationMeasurement::Mu::Ones();
 }
 
 void PoseUKF::integrateMeasurement(const PositionMeasurement& measurement)

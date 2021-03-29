@@ -1,8 +1,6 @@
 #ifndef _POSE_ESTIMATION_BODY_STATE_MEASUREMENT_HPP
 #define _POSE_ESTIMATION_BODY_STATE_MEASUREMENT_HPP
 
-#include <base/Time.hpp>
-#include <base/samples/RigidBodyState.hpp>
 #include <Eigen/Core>
 #include "PoseWithVelocity.hpp"
 
@@ -11,7 +9,8 @@ namespace pose_estimation
 
 struct BodyStateMeasurement
 {
-    static void fromRigidBodyState(const base::samples::RigidBodyState &body_state, PoseWithVelocity &filter_state, PoseWithVelocityCovariance &filter_state_cov)
+    template<class RigidBodyState>
+    static void fromRigidBodyState(const RigidBodyState &body_state, PoseWithVelocity &filter_state, PoseWithVelocityCovariance &filter_state_cov)
     {
         filter_state.position = TranslationType(body_state.position);
         filter_state.orientation = RotationType(MTK::SO3<double>(body_state.orientation));
@@ -25,7 +24,8 @@ struct BodyStateMeasurement
         filter_state_cov.block(9, 9, 3, 3) = body_state.cov_angular_velocity;
     }
 
-    static void toRigidBodyState(const PoseWithVelocity &filter_state, const PoseWithVelocityCovariance &filter_state_cov, base::samples::RigidBodyState &body_state)
+    template<class RigidBodyState>
+    static void toRigidBodyState(const PoseWithVelocity &filter_state, const PoseWithVelocityCovariance &filter_state_cov, RigidBodyState &body_state)
     {
         body_state.position = filter_state.position;
         body_state.orientation = filter_state.orientation;
