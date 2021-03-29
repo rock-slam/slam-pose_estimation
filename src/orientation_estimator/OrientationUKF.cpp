@@ -1,5 +1,4 @@
 #include "OrientationUKF.hpp"
-#include <base-logging/Logging.hpp>
 #include "../GravitationalModel.hpp"
 
 

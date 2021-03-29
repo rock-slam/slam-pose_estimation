@@ -3,7 +3,7 @@
 
 #include <map>
 #include <string>
-#include <base-logging/Logging.hpp>
+#include <iostream>
 
 namespace pose_estimation
 {
@@ -15,8 +15,8 @@ class StreamAlignmentVerifier
 {
 public:
     StreamAlignmentVerifier() : 
-        verification_interval(2.0), drop_rate_warning(0.5), drop_rate_critical(1.0), 
-        aligner_last_verified_usec(0), min_new_samples(5) {}
+        aligner_last_verified_usec(0), verification_interval(2.0), drop_rate_warning(0.5), 
+        drop_rate_critical(1.0), min_new_samples(5) {}
 
     virtual ~StreamAlignmentVerifier() {}
     
@@ -48,21 +48,21 @@ public:
                     if(drop_rate >= drop_rate_critical)
                     {
                         streams_with_critical_alignment_failures++;
-                        LOG_ERROR_S << "Critical transformation alignment failure in stream " << stream_status.name <<
+                        std::cerr << "Critical transformation alignment failure in stream " << stream_status.name <<
                                                 ". " << drop_rate * 100.0 << "% of all samples were dropped in the last " <<
-                                                verification_interval << " seconds.";
+                                                verification_interval << " seconds." << std::endl;
                     }
                     else if(drop_rate > drop_rate_warning)
                     {
                         streams_with_alignment_failures++;
-                        LOG_ERROR_S << "Transformation alignment failure in stream " << stream_status.name <<
+                        std::cerr << "Transformation alignment failure in stream " << stream_status.name <<
                                                 ". " << drop_rate * 100.0 << "% of all samples were dropped in the last " <<
-                                                verification_interval << " seconds.";
+                                                verification_interval << " seconds." << std::endl;
                     }
                 }
                 else
                 {
-                    LOG_INFO_S << "To few samples received to validate the drop rate in stream " << stream_status.name;
+                    std::cout << "To few samples received to validate the drop rate in stream " << stream_status.name << std::endl;
                 }
 
                 aligner_samples_received[stream_status.name] = stream_status.samples_received;
