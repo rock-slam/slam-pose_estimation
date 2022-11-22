@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+    <name>pose_estimation</name>
+    <version>0.1</version>
+    <description>
+        <description brief="Filter based non-linear robot pose estimation using an arbitrary number of state measurements"></description>
+        <maintainer email="tom.creutz@dfki.de">Tom Creutz</maintainer>
+        <author>Sascha Arnold</author>
+        <license>BSD 3-Clause</license>
+
+        <buildtool_depend>cmake</buildtool_depend>
+
+        <depend>eigen3</depend>
+        <depend>mtk</depend>
+        <depend>gdal</depend>
+
+        <export>
+            <build_type>cmake</build_type>
+        </export>
+</package>
