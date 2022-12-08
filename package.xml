@@ -13,6 +13,8 @@
     <depend>eigen3</depend>
     <depend>mtk</depend>
     <depend>gdal</depend>
+    <depend>boost</depend>
+    <depend>suitesparse</depend>
 
     <export>
         <build_type>cmake</build_type>
