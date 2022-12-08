@@ -28,7 +28,7 @@ namespace pose_estimation
         UnscentedKalmanFilter()
             : min_time_delta(1.0e-9)
         {
-            last_measurement_time = std::chrono::microseconds(0);
+            last_measurement_time_usec = std::chrono::microseconds(0);
             process_noise_cov = Covariance::Zero();
             max_time_delta = std::numeric_limits<double>::max();
         }
@@ -41,7 +41,7 @@ namespace pose_estimation
         void initializeFilter(const State &initial_state, const Covariance &state_cov)
         {
             ukf.reset(new MTK_UKF(initial_state, state_cov));
-            last_measurement_time = std::chrono::microseconds(0);
+            last_measurement_time_usec = std::chrono::microseconds(0);
         }
 
         /**
@@ -84,18 +84,18 @@ namespace pose_estimation
         void predictionStepFromSampleTime(const std::chrono::microseconds &sample_time) // micro or milliseconds ?
         {
             // first call
-            if (last_measurement_time.count() == 0)
+            if (last_measurement_time_usec.count() == 0)
             {
-                last_measurement_time = sample_time;
+                last_measurement_time_usec = sample_time;
                 return;
             }
 
             // compute delta t
-            double delta_t = (sample_time.count() - last_measurement_time.count()) * 1.0e-6;
+            double delta_t = (sample_time.count() - last_measurement_time_usec.count()) * 1.0e-6;
 
             // set new last measurement time
             if (delta_t > min_time_delta)
-                last_measurement_time = sample_time;
+                last_measurement_time_usec = sample_time;
 
             predictionStep(delta_t);
         }
@@ -129,10 +129,10 @@ namespace pose_estimation
         bool isInitialized() const { return ukf.get() != NULL; }
         const Covariance &getProcessNoiseCovariance() const { return process_noise_cov; }
         void setProcessNoiseCovariance(const Covariance &noise_cov) { process_noise_cov = noise_cov; }
-        const std::chrono::microseconds &getLastMeasurementTime() const { return last_measurement_time; }
-        void setLastMeasurementTime(const std::chrono::microseconds &last_measurement_time)
+        const std::chrono::microseconds &getLastMeasurementTime() const { return last_measurement_time_usec; }
+        void setLastMeasurementTime(const std::chrono::microseconds &last_measurement_time_usec)
         {
-            this->last_measurement_time = last_measurement_time;
+            this->last_measurement_time_usec = last_measurement_time_usec;
         }
         double getMaxTimeDelta() const { return max_time_delta; }
         void setMaxTimeDelta(double max_time_delta) { this->max_time_delta = max_time_delta; }
@@ -152,7 +152,7 @@ namespace pose_estimation
     protected:
         std::shared_ptr<MTK_UKF> ukf;
         Covariance process_noise_cov;
-        std::chrono::microseconds last_measurement_time;
+        std::chrono::microseconds last_measurement_time_usec;
         double max_time_delta;
         double min_time_delta;
     };
