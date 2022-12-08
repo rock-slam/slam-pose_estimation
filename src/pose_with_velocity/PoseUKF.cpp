@@ -1,5 +1,6 @@
 #include "pose_with_velocity/PoseUKF.hpp"
 #include <cmath>
+#include <limits>
 
 namespace pose_estimation
 {
@@ -105,7 +106,7 @@ namespace pose_estimation
         MTK::setDiagonal(process_noise_cov, &WState::velocity, 0.00001);
         MTK::setDiagonal(process_noise_cov, &WState::angular_velocity, 0.00001);
 
-        acceleration.mu = std::nan * AccelerationMeasurement::Mu::Ones();
+        acceleration.mu = std::numeric_limits<double>::quiet_NaN() * AccelerationMeasurement::Mu::Ones();
     }
 
     void PoseUKF::integrateMeasurement(const PositionMeasurement &measurement)

@@ -1,0 +1,10 @@
+@PACKAGE_INIT@
+
+list(APPEND CMAKE_MODULE_PATH "@PACKAGE_pose_estimation_MODULE_INSTALL_DIR@")
+
+include(CMakeFindDependencyMacro)
+find_dependency(Eigen3 REQUIRED)
+find_dependency(mtk REQUIRED)
+find_dependency(GDAL REQUIRED)
+
+include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")

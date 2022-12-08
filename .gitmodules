@@ -1,0 +1,3 @@
+[submodule "extern/mtk"]
+	path = extern/mtk
+	url = https://github.com/rock-slam/slam-mtk.git

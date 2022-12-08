@@ -26,8 +26,9 @@ namespace pose_estimation
         typedef typename MTK_UKF::cov Covariance;
 
         UnscentedKalmanFilter()
-            : last_measurement_time(0), min_time_delta(1.0e-9)
+            : min_time_delta(1.0e-9)
         {
+            last_measurement_time = std::chrono::microseconds(0);
             process_noise_cov = Covariance::Zero();
             max_time_delta = std::numeric_limits<double>::max();
         }
@@ -40,7 +41,7 @@ namespace pose_estimation
         void initializeFilter(const State &initial_state, const Covariance &state_cov)
         {
             ukf.reset(new MTK_UKF(initial_state, state_cov));
-            last_measurement_time.microseconds = 0;
+            last_measurement_time = std::chrono::microseconds(0);
         }
 
         /**

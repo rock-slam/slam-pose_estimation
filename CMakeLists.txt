@@ -6,7 +6,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 include(GNUInstallDirs)
 include(CMakeDependentOption)
 include(CMakePackageConfigHelpers)
-include(src)
+
+include(AddMTK)
+add_subdirectory(extern/mtk)
 
 option(PACKAGE_TESTS "Build the tests" ON)
 
@@ -16,19 +18,22 @@ endif()
 
 find_package(PkgConfig)
 
-# pkg_check_modules(Eigen3 REQUIRED eigen3)
+# pkg_check_modules(mtk REQUIRED mtk ukfom)
 find_package(Eigen3 REQUIRED)
 find_package(GDAL REQUIRED)
+find_package(mtk CONFIG)
 
 add_library(pose_estimation SHARED
-  POSE_ESTIMATION_SOURCES
+  src/GeographicProjection.cpp
+  src/pose_with_velocity/PoseUKF.cpp
+  src/orientation_estimator/OrientationUKF.cpp
 )
 target_include_directories(pose_estimation PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include/${PROJECT_NAME}>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}> # <prefix>/include/${PROJECT_NAME}
 )
 
-target_link_libraries(pose_estimation PUBLIC Eigen3::Eigen GDAL::GDAL mtk)
+target_link_libraries(pose_estimation PUBLIC Eigen3::Eigen GDAL::GDAL mtk::mtk)
 
 target_compile_features(pose_estimation PUBLIC cxx_std_17)
 
