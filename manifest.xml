@@ -1,7 +1,5 @@
 <package>
-  <description brief="Filter based non-linear robot pose estimation using an arbitrary number of state measurements">
-  
-  </description>
+  <description brief="Filter based non-linear robot pose estimation using an arbitrary number of state measurements"></description>
   <maintainer>Sascha Arnold/sascha.arnold@dfki.de</maintainer>
   <author>Sascha Arnold/sascha.arnold@dfki.de</author>
   <license>BSD 3-Clause</license>
@@ -11,9 +9,8 @@
   <depend package="base/cmake" />
   <depend package="base/types" />
   <depend package="slam/mtk" />
-  <depend package="drivers/aggregator" />
   <depend package="gdal" />
-  
+
   <tags>stable</tags>
 
   <keywords>
